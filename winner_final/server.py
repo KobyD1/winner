@@ -9,7 +9,7 @@ HEADERS = {"X-Auth-Token": API_KEY}
 
 
 def get_league_standings(competition_code: str = "PL"):
-    """שולף את טבלת הליגה בקריאה אחת לשרת החיצוני"""
+    """שולף את טבלת הליגה בקריאה אחת כדי לקבל נקודות ומיקום מדויקים"""
     url = f"https://api.football-data.org/v4/competitions/{competition_code}/standings"
     response = requests.get(url, headers=HEADERS)
 
@@ -19,14 +19,12 @@ def get_league_standings(competition_code: str = "PL"):
     data = response.json()
     standings = data.get("standings", [])
 
-    # חיפוש הטבלה הראשית (TOTAL)
     table = []
     for standing in standings:
         if standing.get("type") == "TOTAL":
             table = standing.get("table", [])
             break
 
-    # מיפוי הנתונים כך שכל team_id יקבל את המיקום והנקודות שלו
     teams_standings = {}
     for row in table:
         team_id = row.get("team", {}).get("id")
@@ -39,6 +37,7 @@ def get_league_standings(competition_code: str = "PL"):
 
 def get_team_formatted_stats(team_id: int, standings_data: dict, num_matches: int = 8,
                              only_premier_league: bool = True):
+    # שליפת המשחקים עם סינון מראש לסטטוס הסתיים (FINISHED)
     matches_url = f"https://api.football-data.org/v4/teams/{team_id}/matches"
     query_params = {"status": "FINISHED"}
 
@@ -55,6 +54,7 @@ def get_team_formatted_stats(team_id: int, standings_data: dict, num_matches: in
     if only_premier_league:
         matches = [m for m in matches if m.get("competition", {}).get("code") == "PL"]
 
+    # מיון מהחדש לישן וחיתך לפי כמות המשחקים המבוקשת
     matches = sorted(matches, key=lambda x: x.get("utcDate", ""), reverse=True)
     matches = matches[:num_matches]
 
@@ -62,8 +62,8 @@ def get_team_formatted_stats(team_id: int, standings_data: dict, num_matches: in
     goals_for_sum = 0
     goals_against_sum = 0
     total_goals_sum = 0
-
     team_name = "Unknown"
+    match_details = []
 
     for match in matches:
         is_home = match.get("homeTeam", {}).get("id") == team_id
@@ -90,7 +90,21 @@ def get_team_formatted_stats(team_id: int, standings_data: dict, num_matches: in
         goals_against_sum += ga
         total_goals_sum += (gf + ga)
 
-    # שליפת שם הקבוצה
+        home_team_name = match.get("homeTeam", {}).get("name", "Unknown")
+        away_team_name = match.get("awayTeam", {}).get("name", "Unknown")
+        comp_name = match.get("competition", {}).get("name", "")
+
+        # הוספת פרטי המשחק שהסתייים לרשימה המסודרת של הקבוצה
+        match_details.append({
+            "competition": comp_name,
+            "date": match.get("utcDate"),
+            "homeTeam": home_team_name,
+            "awayTeam": away_team_name,
+            "score": f"{home_goals} - {away_goals}",
+            "totalGoals": gf + ga
+        })
+
+    # שליפת שם הקבוצה המעודכן
     team_info_url = f"https://api.football-data.org/v4/teams/{team_id}"
     team_resp = requests.get(team_info_url, headers=HEADERS)
     if team_resp.status_code == 200:
@@ -100,27 +114,28 @@ def get_team_formatted_stats(team_id: int, standings_data: dict, num_matches: in
     avg_against = (goals_against_sum / total_matches) if total_matches > 0 else 0
     avg_total = (total_goals_sum / total_matches) if total_matches > 0 else 0
 
-    # שליפת הנקודות והמיקום מתוך המידע שנשלף מהקריאה ל-competitions/standings
     team_standing = standings_data.get(team_id, {"Position": 0, "Points": 0})
 
+    # מבנה מסודר עבור כל קבוצה בנפרד
     return {
         "Team": team_name,
         "Points": team_standing.get("Points", 0),
         "Position": team_standing.get("Position", 0),
         "avgGoalsFor": round(avg_for, 2),
         "avgGoalsAgainst": round(avg_against, 2),
-        "avgTotalGoals": round(avg_total, 2)
+        "avgTotalGoals": round(avg_total, 2),
+        "finished_matches": match_details
     }
 
 
 @app.get("/get-teams-data/{team1_id}/{team2_id}")
 def get_teams_data_endpoint(team1_id: int, team2_id: int, num_matches: int = 8, only_premier_league: bool = True):
-    # קריאה אחת לשרת החיצוני שמביאה את כל טבלת הליגה ומעדכנת נקודות ומיקום
     standings_data = get_league_standings("PL") if only_premier_league else {}
 
     team1_stats = get_team_formatted_stats(team1_id, standings_data, num_matches, only_premier_league)
     team2_stats = get_team_formatted_stats(team2_id, standings_data, num_matches, only_premier_league)
 
+    # מחזיר JSON יחיד שמחולק בצורה מסודרת לפי קבוצות
     return {
         "teams_data": [team1_stats, team2_stats]
     }
