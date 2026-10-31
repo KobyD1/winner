@@ -129,5 +129,5 @@ def get_teams_data_endpoint(team1_id: int, team2_id: int, num_matches: int = 8, 
     team2_stats = get_team_formatted_stats(team2_id, standings_data, num_matches, only_premier_league)
 
     return {
-        "teams_data": [team1_stats, team2_stats]
+        "teams_data": [standings_data]
     }
