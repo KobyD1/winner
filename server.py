@@ -4,7 +4,7 @@ import os
 
 app = FastAPI()
 
-API_KEY = os.getenv("API_KEY", "הכנס_כאן_את_המפתח_שלך")
+API_KEY = os.getenv("API_KEY", "6e8b3c65a58f4a05b874d72fe4170fd7")
 HEADERS = {"X-Auth-Token": API_KEY}
 
 
