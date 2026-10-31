@@ -18,6 +18,7 @@ def get_league_standings(competition_code: str = "PL"):
 
     data = response.json()
     standings = data.get("standings", [])
+    print (standings)
 
     # איתור הטבלה הראשית (TOTAL)
     table = []
