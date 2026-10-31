@@ -1,0 +1,42 @@
+{
+  "interpreter": "C:\\Users\\dkdk1\\PycharmProjects\\PythonProjectNew\\.venv\\Scripts\\python.exe",
+  "args": {},
+  "names": {
+    "all_wnba_v1.bat": "נשים NBA",
+    "football_under_over_final.py": "כדורגל אירופה - מעל/מתחת",
+    "league_bancker_final.py": "כדורגל אירופה - בנקר",
+    "basketball_under.py": "כדורסל - מעל/מתחת"
+  },
+  "visible": {
+    "all_wnba_v1.bat": false,
+    "basketball_under.py": false,
+    "req_winner.txt": false,
+    "all_no_filter_koby2.bat": false,
+    "all_no_filter.bat": false,
+    "all_no_filter_v1.bat": false,
+    "wnba_final.bat": false,
+    "globals.py": false
+  },
+  "modes": {},
+  "colors": {
+    "log_bg": "#d2d2d2",
+    "summary_bg": "#cacaff",
+    "stop": "#ff0000"
+  },
+  "hide_summary": false,
+  "days_var": "DAYS",
+  "days_options": [
+    "0",
+    "1",
+    "2",
+    "3"
+  ],
+  "last_days": "1",
+  "league_var": "LEAGUE",
+  "league_options": [
+    "Spain",
+    "England-PLeague",
+    "NBA"
+  ],
+  "last_league": "Spain"
+}
