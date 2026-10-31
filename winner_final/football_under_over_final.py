@@ -17,8 +17,9 @@ if is_found:
         if data["description"] == '2 Teams Under/Over 2-3 Range':
 
             teams_data_excel= files_utils.get_teams_names_from_excel("football_all.xlsx",data.get("team_a"),data.get("team_b") )
-            teams_data = football_data_api.get_teams_data(teams_data_excel.get("League"),[teams_data_excel.get("team_a"),teams_data_excel.get("team_b")])
 
+            teams_data = football_data_api.get_teams_data(teams_data_excel.get("League"),[teams_data_excel.get("team_a"),teams_data_excel.get("team_b")])
+            
             score , favorite ,avg_total = algo_utils.calc_football_under_over_algo(teams_data[0], teams_data[1],data["description"])
             if (favorite != 0 ):
                 bet = data[f"bet{favorite}"]
