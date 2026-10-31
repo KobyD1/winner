@@ -82,3 +82,39 @@ def get_teams():
         "total_teams": len(teams),
         "teams": teams
     })
+
+@app.route("/all-results")
+def all_results():
+
+    url = "https://api.football-data.org/v4/competitions/PL/matches"
+
+    headers = {
+        "X-Auth-Token": API_KEY
+    }
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code != 200:
+        return jsonify({
+            "error": response.status_code,
+            "details": response.text
+        }), response.status_code
+
+    data = response.json()
+
+    results = []
+
+    for match in data.get("matches", []):
+
+        full_time = match.get("score", {}).get("fullTime", {})
+
+        results.append({
+            "matchday": match.get("matchday"),
+            "date": match.get("utcDate"),
+            "home_team": match.get("homeTeam", {}).get("name"),
+            "away_team": match.get("awayTeam", {}).get("name"),
+            "home_goals": full_time.get("home"),
+            "away_goals": full_time.get("away")
+        })
+
+    return jsonify(results)
