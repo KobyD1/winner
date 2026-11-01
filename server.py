@@ -22,7 +22,47 @@ def home():
         "status": "online",
         "api": "Football Data API"
     })
+@app.route("/<league_code>/football-under/<taeam_a/<team_b>/<desc>")
+def calc_football_under_over_api_algo(self, team_a, team_b, desc):
+    bonus = 0
+    favorite = ""
+    team_a_avg_total = team_a["avgGoals"]
+    team_b_avg_total = team_b["avgGoals"]
+    avg_total = (team_a_avg_total + team_b_avg_total) / 2
+    if abs(team_a_avg_total - team_a_avg_total) < 0.6:
+        bonus += 10
+        print(f"2 teams under over found with similar average total goals: {team_a["Team"]} ,{team_b["Team"]}")
 
+    if abs(team_a_avg_total - team_a_avg_total) > 1.5:
+        bonus -= 10
+        print(f"*** 2 teams found with none similar average goals!!! {team_a["Team"]} ,{team_b["Team"]}***")
+
+    if desc == "2 Teams Under/Over 2-3 Range":
+
+        match avg_total:
+            case x if x < 1.0:
+                favorite = 1
+                bonus += 20
+            case x if 1.6 <= x < 2.65:
+                favorite = 3
+            case x if x > 3.1:
+                favorite = 2
+                high_bonus = (avg_total - 3) * 15
+                bonus = bonus + 30 + high_bonus
+            case _:
+                print("Other scoring range")
+                favorite = 0
+
+
+
+    elif desc == "2 Teams Under/Over":
+        pass
+    print(f"Summery  - Bonus: {bonus} ,favorite: {favorite} , avg_total: {avg_total}")
+    return jsonify({
+        "bonus": bonus,
+        "favorite": favorite,
+        "avg_total": avg_total
+    })
 
 # ==========================================
 # Teams
