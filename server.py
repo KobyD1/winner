@@ -1,4 +1,6 @@
 from flask import Flask, jsonify
+from flask import request
+
 import requests
 import os
 
@@ -21,9 +23,81 @@ def home():
     })
 
 
-from flask import request
 
 
+
+@app.route("/football-banker", methods=["POST"])
+def calc_football_banker_algo():
+
+    data = request.get_json()
+
+    team_a_data = data["team_a"]
+    team_b_data = data["team_b"]
+
+    scores = 0
+    favorite = 0
+
+    position_diff = (
+        int(team_a_data["Position"]) -
+        int(team_b_data["Position"])
+    )
+
+    position_diff_abs = abs(position_diff)
+
+    points_diff = (
+        int(team_a_data["Points"]) -
+        int(team_b_data["Points"])
+    )
+
+    points_diff = abs(points_diff)
+
+    if position_diff_abs > 9:
+
+        print(
+            "Teams found for Banker Algo by position"
+        )
+
+        scores += position_diff_abs * 10
+
+    if (
+        position_diff_abs > 9 and
+        points_diff > 9
+    ):
+
+        print(
+            "Teams found for Banker Algo by points"
+        )
+
+        scores += points_diff * 10
+
+    # team_a better ranked
+    if (
+        position_diff < 0 and
+        position_diff_abs > 9
+    ):
+
+        scores += 20
+        favorite = 1
+
+    # team_b better ranked
+    elif (
+        position_diff > 0 and
+        position_diff_abs > 9
+    ):
+
+        favorite = 2
+
+    print(
+        f"{scores} scores found "
+        f"favorite = {favorite}"
+    )
+
+    return jsonify({
+        "score": scores,
+        "favorite": favorite,
+        "position_diff": position_diff_abs,
+        "points_diff": points_diff
+    })
 @app.route("/football-under", methods=["POST"])
 def calc_football_under_over_api_algo():
     data = request.get_json()
