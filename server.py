@@ -443,7 +443,7 @@ def all_stats(league_code):
 @app.route("/config")
 def config():
     BASE_URL = os.getenv("URL_WINNER")
-    AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
+    AIRTABLE_API_KEY = os.getenv("AIR_TABLE_API_KEY")
     AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID")
     AIRTABLE_TABLE_NAME = os.getenv("AIRTABLE_TABLE_NAME")
 
