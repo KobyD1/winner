@@ -440,12 +440,18 @@ def all_stats(league_code):
         "teams": teams
     })
 
-@app.route("/ui/config")
+@app.route("/config")
 def config():
     BASE_URL = os.getenv("URL_WINNER")
+    AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
+    AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID")
+    AIRTABLE_TABLE_NAME = os.getenv("AIRTABLE_TABLE_NAME")
 
     return jsonify({
-        "ui_base_url": BASE_URL
+        "ui_base_url": BASE_URL,
+        "airtable_api_key": AIRTABLE_API_KEY,
+        "airtable_base_id": AIRTABLE_BASE_ID,
+        "airtable_table_name": AIRTABLE_TABLE_NAME
     })
 
 @app.route("/check-license/<hwid>")
