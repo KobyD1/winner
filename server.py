@@ -1,5 +1,7 @@
 from flask import Flask, jsonify
 from flask import request
+from pyairtable import Api
+import os
 
 import requests
 import os
@@ -441,6 +443,52 @@ def config():
 
     return jsonify({
         "ui_base_url": BASE_URL
+    })
+
+@app.route("/check-license/<hwid>")
+def check_license(hwid):
+
+
+    AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
+    AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID")
+    AIRTABLE_TABLE_NAME = os.getenv("AIRTABLE_TABLE_NAME")
+    api = Api(AIRTABLE_API_KEY)
+
+    table = api.table(
+        AIRTABLE_BASE_ID,
+        AIRTABLE_TABLE_NAME
+    )
+
+    formula = f"{{HWID}}='{hwid}'"
+
+    records = table.all(
+        formula=formula
+    )
+
+    if records:
+
+        fields = records[0]["fields"]
+
+        status = fields.get(
+            "Status",
+            ""
+        )
+
+        return jsonify({
+            "hwid": hwid,
+            "status": status,
+            "valid": status == "Valid"
+        })
+
+    table.create({
+        "HWID": hwid,
+        "Status": "Pending"
+    })
+
+    return jsonify({
+        "hwid": hwid,
+        "status": "Pending",
+        "valid": False
     })
 
 
