@@ -173,7 +173,7 @@ def calc_football_under_over_api_algo():
 
                 favorite = 3
                 home_count = team_a["count_2_3"]
-                away_count = team_b["'count_2_3'"]
+                away_count = team_b["count_2_3"]
 
             case x if x > 3.1:
 
