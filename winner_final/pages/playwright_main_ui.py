@@ -1,8 +1,9 @@
 import re
+import time
 from asyncio.windows_events import NULL
 
 
-class telesport_main_page:
+class main_page:
 
     def __init__(self,page):
         self.page = page
@@ -15,28 +16,46 @@ class telesport_main_page:
             title = "כדורגל"
         self.page.locator("div.ddlTitleFilters").wait_for(state="visible")
         self.page.locator("div.ddlTitleFilters").click()
-        self.page.locator("#ddlBoxFilters").get_by_text(title).click()
         print (f"success to click on {title}")
+
+    def close_all_tabs(self):
+        self.page.wait_for_timeout(1000)
+        context = self.page.context
+        for p in context.pages[1:]:
+            p.close()
+        self.page.wait_for_timeout(1000)
 
     def set_table_league(self,league="wnba"):
         is_found = True
-        self.page.get_by_text("ליגות").nth(0).click()
+        self.page.locator("[class*=liFilterTabs]").nth(4).click()
+        self.close_all_tabs()
+
+        self.page.get_by_role("checkbox", name="הצג הכל").click()
+
         match league:
             case "wnba":
                 loc = self.page.locator("#checkbox_1663")
             case "Spain":
-                loc = self.page.locator("#checkbox_248")
+                loc= self.page.get_by_role("checkbox", name="ספרד - לה ליגה")
 
             case "England-PLeague":
-                loc = self.page.locator("#checkbox_90")
+                loc = self.page.get_by_role("checkbox", name="אנגליה - פרמייר ליג")
+
+            case "Italy-Serie A":
+                 loc = self.page.get_by_role("checkbox", name="איטליה - סרייה א").all()[0]
+
             case _:
                 print("league not found")
                 loc = None
+        all_checkbox = self.page.get_by_role("checkbox", name="הצג הכל")
 
-
+        if all_checkbox.is_checked():
+            all_checkbox.click()
         if loc.is_visible():
             loc.click()
-        else:
+        self.close_all_tabs()
+
+        if not loc.is_visible():
             print (45 * "*")
             print ("*****   ERROR : לא נמצאו ליגה פעילה בתכניה   *****")
             print (45 * "*")
@@ -310,5 +329,4 @@ class telesport_main_page:
                 bet_empty_counter += 1
 
         return row_data,bet_empty_counter
-
 

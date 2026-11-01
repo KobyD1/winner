@@ -42,7 +42,6 @@ import sys
 import threading
 import time
 import tkinter as tk
-import webbrowser
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -100,15 +99,16 @@ DEFAULT_COLORS = {
     "bg": "#f0f0f0", "log_bg": "#1e1e1e", "summary_bg": "#252b33",
     "run": "#188038", "stop": "#c5221f", "restart": "#e37400",
     "refresh": "#5f6368", "colors": "#7b1fa2",
-    "open": "#1a73e8", "clear": "#5f6368", "save": "#1a73e8", "copy": "#1a73e8",
-    "error_bg": "#c5221f",  "open_dir": "#1a73e8",
+    "clear": "#5f6368", "save": "#1a73e8", "copy": "#1a73e8",
+    "error_bg": "#c5221f", "folder": "#1a73e8",
 }
 COLOR_LABELS = {
     "bg": "רקע החלון", "log_bg": "רקע הלוג", "summary_bg": "רקע טבלת הסיכום",
     "run": "כפתור: הרץ", "stop": "כפתור: עצור", "restart": "כפתור: הפעל מחדש",
     "refresh": "כפתור: רענן", "colors": "כפתור: צבעים",
-    "open": "כפתור: פתח בדפדפן", "clear": "כפתור: נקה", "save": "כפתור: שמור לוג",
+    "clear": "כפתור: נקה", "save": "כפתור: שמור לוג",
     "copy": "כפתור: העתק סיכום", "error_bg": "רקע הודעת שגיאה (ERROR)",
+    "folder": "כפתור: שנה תיקייה",
 }
 HEX_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 PALETTE_DARK = {"out": "#d4d4d4", "err": "#f48771", "warn": "#e5c07b",
@@ -118,11 +118,6 @@ PALETTE_LIGHT = {"out": "#1f1f1f", "err": "#c5221f", "warn": "#9a6700",
 
 
 # ───────────────────────────── עזרי צבע ─────────────────────────────
-
-
-
-
-
 def _rgb(h: str) -> tuple[int, int, int]:
     return int(h[1:3], 16), int(h[3:5], 16), int(h[5:7], 16)
 
@@ -368,6 +363,27 @@ class ManagerApp(tk.Tk):
         self.q: queue.Queue = queue.Queue()
         self.tasks: dict[str, Task] = {}
         self.selected: Optional[str] = None
+
+        self.mode_var = tk.StringVar(value="auto")
+        self.days_value = tk.StringVar()
+        self.league_value = tk.StringVar()
+        self.autoscroll = tk.BooleanVar(value=True)
+        self.wrap = tk.BooleanVar(value=False)
+        self.clear_on_run = tk.BooleanVar(value=True)
+        self.hide_summary = tk.BooleanVar(value=False)
+        self.buttons: dict[str, ColorButton] = {}
+        self.err_active_task: Optional[str] = None
+        self.err_count = 0
+
+        self._reload_project_state()           # טוען cfg, צבעים, DAYS/LEAGUE וכו' עבור BASE_DIR
+        self._build_ui()
+        self.refresh_tasks()
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
+        self.after(POLL_MS, self._poll)
+        self.after(1000, self._clock)
+
+    # ── מצב שתלוי בתיקיית הפרויקט (BASE_DIR) - נטען גם בהפעלה וגם אחרי שינוי תיקייה ──
+    def _reload_project_state(self) -> None:
         self.cfg = self._load_config()
 
         # המפרש = זה שמריץ את המנג'ר (אפשר לדרוס דרך "interpreter" בקובץ הקונפיג)
@@ -385,64 +401,28 @@ class ManagerApp(tk.Tk):
         except re.error:
             self.error_re = ERROR_WORD_RE
 
-        self.mode_var = tk.StringVar(value="auto")
         self.days_var_name = str(self.cfg.get("days_var") or DEFAULT_DAYS_VAR)
         self.days_options = list(self.cfg.get("days_options") or DEFAULT_DAYS_OPTIONS)
         initial_days = (read_global_value(self.days_var_name)
                         or str(self.cfg.get("last_days", "")) or self.days_options[0])
-        self.days_value = tk.StringVar(value=initial_days)
         self.league_var_name = str(self.cfg.get("league_var") or DEFAULT_LEAGUE_VAR)
         self.league_options = list(self.cfg.get("league_options") or DEFAULT_LEAGUE_OPTIONS)
         initial_league = (read_global_value(self.league_var_name)
                           or str(self.cfg.get("last_league", "")) or self.league_options[0])
         if initial_league not in self.league_options:
             self.league_options.append(initial_league)
-        self.league_value = tk.StringVar(value=initial_league)
-        self.autoscroll = tk.BooleanVar(value=True)
-        self.wrap = tk.BooleanVar(value=False)
-        self.clear_on_run = tk.BooleanVar(value=True)
-        self.hide_summary = tk.BooleanVar(value=bool(self.cfg.get("hide_summary", False)))
-        self.buttons: dict[str, ColorButton] = {}
-        self.err_active_task: Optional[str] = None
-        self.err_count = 0
 
-        self._build_ui()
+        self.days_value.set(initial_days)
+        self.league_value.set(initial_league)
+        self.hide_summary.set(bool(self.cfg.get("hide_summary", False)))
 
-    def choose_directory(self):
-        new_dir = filedialog.askdirectory(title="בחר תיקייה לניהול")
-        if not new_dir:
-            return
-
-        try:
-            new_path = Path(new_dir).resolve()
-            if not new_path.exists():
-                messagebox.showerror("שגיאה", "התיקייה אינה קיימת.")
-                return
-
-            # עדכון BASE_DIR הגלובלי
-            global BASE_DIR, CONFIG_FILE, GLOBALS_FILE
-            BASE_DIR = new_path
-            CONFIG_FILE = BASE_DIR / ".manager_config.json"
-            GLOBALS_FILE = BASE_DIR / "globals.py"
-
-            # עדכון כותרת החלון
-            self.title(f"מנהל סקריפטים – {BASE_DIR.name}")
-
-            # טעינה מחדש של קובץ הקונפיג (אם קיים)
-            self.cfg = self._load_config()
-
-            # רענון רשימת הסקריפטים
-            self.refresh_tasks()
-
-            # עדכון סטטוס למשתמש
-            self.status_lbl.config(text=f"נטען: {BASE_DIR}")
-
-        except Exception as e:
-            messagebox.showerror("שגיאה", f"לא ניתן לטעון את התיקייה:\n{e}")
-        self.refresh_tasks()
-        self.protocol("WM_DELETE_WINDOW", self.on_close)
-        self.after(POLL_MS, self._poll)
-        self.after(1000, self._clock)
+        if hasattr(self, "days_cb"):            # הווידג'טים כבר קיימים - עדכן אותם במקום
+            self.days_cb.config(values=self.days_options)
+            self.days_lbl.config(text=f"ימים ({self.days_var_name}):")
+            self.league_cb.config(values=self.league_options)
+            self.league_lbl.config(text=f"ליגה ({self.league_var_name}):")
+            self.folder_lbl.config(text=f"📁 {BASE_DIR.name}")
+            self._apply_theme()
 
     # ── בניית ממשק ──
     def _btn(self, parent, key: str, text: str, command) -> ColorButton:
@@ -473,7 +453,6 @@ class ManagerApp(tk.Tk):
             pass
         self.style.configure("Treeview", rowheight=26)
 
-
         self.status_lbl = ttk.Label(self, anchor="w", padding=(8, 3))
         self.status_lbl.pack(side="bottom", fill="x")
 
@@ -502,8 +481,14 @@ class ManagerApp(tk.Tk):
         paned.add(left, weight=1)
         paned.add(right, weight=4)
 
-        # ── צד שמאל: רשימת סקריפטים ──
+        # ── תיקיית הפרויקט הנוכחית (ניתנת לשינוי) ──
+        folder_frame = ttk.Frame(left)
+        folder_frame.pack(fill="x", pady=(0, 6))
+        self.folder_lbl = ttk.Label(folder_frame, text=f"📁 {BASE_DIR.name}", anchor="w")
+        self.folder_lbl.pack(side="left", fill="x", expand=True)
+        self._btn(folder_frame, "folder", "שנה תיקייה…", self.change_folder).pack(side="right")
 
+        # ── צד שמאל: רשימת סקריפטים ──
         tree_frame = ttk.Frame(left)
         tree_frame.pack(fill="both", expand=True)
         self.tree = ttk.Treeview(tree_frame, columns=("kind", "status"),
@@ -534,8 +519,8 @@ class ManagerApp(tk.Tk):
         self.mode_cb.grid(row=0, column=1, sticky="w", padx=(6, 0))
         self.mode_cb.bind("<<ComboboxSelected>>", self.on_mode_change)
 
-        ttk.Label(opts, text=f"ימים ({self.days_var_name}):").grid(
-            row=1, column=0, sticky="w", pady=(6, 0))
+        self.days_lbl = ttk.Label(opts, text=f"ימים ({self.days_var_name}):")
+        self.days_lbl.grid(row=1, column=0, sticky="w", pady=(6, 0))
         self.days_cb = ttk.Combobox(opts, values=self.days_options,
                                     textvariable=self.days_value, width=12)
         self.days_cb.grid(row=1, column=1, sticky="w", padx=(6, 0), pady=(6, 0))
@@ -545,8 +530,8 @@ class ManagerApp(tk.Tk):
         self.days_note = ttk.Label(opts, foreground="#188038")
         self.days_note.grid(row=2, column=0, columnspan=2, sticky="w")
 
-        ttk.Label(opts, text=f"ליגה ({self.league_var_name}):").grid(
-            row=3, column=0, sticky="w", pady=(6, 0))
+        self.league_lbl = ttk.Label(opts, text=f"ליגה ({self.league_var_name}):")
+        self.league_lbl.grid(row=3, column=0, sticky="w", pady=(6, 0))
         self.league_cb = ttk.Combobox(opts, values=self.league_options,
                                       textvariable=self.league_value, state="readonly",
                                       width=16)
@@ -568,9 +553,6 @@ class ManagerApp(tk.Tk):
             side="left", expand=True, fill="x", padx=2)
         self._btn(bottom, "refresh", "⟳ רענן", self.refresh_tasks).pack(
             side="left", expand=True, fill="x", padx=2)
-        self._btn(bottom, "open_dir", "בחר תיקייה 📁", self.choose_directory).pack(
-            side="left", expand=True, fill="x", padx=2
-        )
 
         # ── צד ימין: כותרת, אפשרויות, סיכום ולוג ──
         head = ttk.Frame(right)
@@ -579,8 +561,7 @@ class ManagerApp(tk.Tk):
         self.title_lbl.pack(side="left")
         self.state_lbl = ttk.Label(head, font=("Segoe UI", 10))
         self.state_lbl.pack(side="left", padx=12)
-        for key, text, cmd in (("open", "פתח בדפדפן", self.open_url),
-                               ("clear", "נקה לוג", self.clear_log),
+        for key, text, cmd in (("clear", "נקה לוג", self.clear_log),
                                ("save", "שמור לוג…", self.save_log)):
             self._btn(head, key, text, cmd).pack(side="right", padx=(4, 0))
 
@@ -739,6 +720,50 @@ class ManagerApp(tk.Tk):
                                    encoding="utf-8")
         except OSError:
             pass
+
+    # ── שינוי תיקיית הפרויקט ──
+    def change_folder(self) -> None:
+        """
+        פותח דיאלוג לבחירת תיקייה אחרת, ואז סורק אותה מחדש במקום BASE_DIR הנוכחי.
+        לכל תיקייה יש .manager_config.json משלה (צבעים, DAYS/LEAGUE, שמות וכו'),
+        כך שמעבר בין תיקיות עובד כמו מעבר בין פרויקטים נפרדים.
+        """
+        global BASE_DIR, GLOBALS_FILE, CONFIG_FILE
+        running = [t for t in self.tasks.values() if t.status == "running"]
+        if running:
+            if not messagebox.askyesno(
+                    "שינוי תיקייה",
+                    f"{len(running)} תהליכים עדיין רצים בתיקייה הנוכחית.\n"
+                    "לעצור אותם ולהחליף תיקייה?"):
+                return
+            for t in running:
+                if t.proc:
+                    kill_tree(t.proc)
+
+        chosen = filedialog.askdirectory(title="בחר תיקיית פרויקט", initialdir=str(BASE_DIR))
+        if not chosen:
+            return
+        new_dir = Path(chosen).resolve()
+        if new_dir == BASE_DIR:
+            return
+        if not new_dir.is_dir():
+            messagebox.showerror("שגיאה", f"התיקייה לא נמצאה:\n{new_dir}")
+            return
+
+        self._save_config()      # שמור את מצב התיקייה הנוכחית לפני שעוזבים אותה
+
+        BASE_DIR = new_dir
+        GLOBALS_FILE = BASE_DIR / "globals.py"
+        CONFIG_FILE = BASE_DIR / ".manager_config.json"
+
+        self.tasks.clear()
+        self.selected = None
+        self._hide_error()
+        self.err_count = 0
+
+        self._reload_project_state()
+        self.title(f"מנהל סקריפטים – {BASE_DIR.name}")
+        self.refresh_tasks()
 
     # ── רשימת משימות ──
     def _is_visible(self, name: str) -> bool:
@@ -1150,11 +1175,6 @@ class ManagerApp(tk.Tk):
             Path(fn).write_text("\n".join(line for line, _ in t.log) + "\n",
                                 encoding="utf-8")
 
-    def open_url(self) -> None:
-        t = self._cur()
-        if t and t.url:
-            webbrowser.open(t.url)
-
     # ── שדה הסיכום ──
     def _render_summary(self, t: Optional[Task]) -> None:
         w = self.sum_text
@@ -1186,7 +1206,7 @@ class ManagerApp(tk.Tk):
         if not t:
             self.title_lbl.config(text="בחר סקריפט מהרשימה")
             self.state_lbl.config(text="")
-            for k in ("run", "stop", "restart", "save", "clear", "open", "copy"):
+            for k in ("run", "stop", "restart", "save", "clear", "copy"):
                 B[k].set_enabled(False)
             return
         dark = luminance(self.colors["bg"]) < 0.5
@@ -1205,7 +1225,6 @@ class ManagerApp(tk.Tk):
         B["restart"].set_enabled(True)
         B["save"].set_enabled(True)
         B["clear"].set_enabled(True)
-        B["open"].set_enabled(bool(t.url))
         B["copy"].set_enabled(bool(t.summary))
 
     def _update_statusbar(self) -> None:
