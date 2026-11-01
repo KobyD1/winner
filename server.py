@@ -22,20 +22,86 @@ def home():
         "status": "online",
         "api": "Football Data API"
     })
+@app.route("/<league_code>/football-under/<taeam_a/<team_b>/<desc>")
+def calc_football_under_over_api_algo(self, team_a, team_b, desc):
+    bonus = 0
+    favorite = ""
+    team_a_avg_total = team_a["avgGoals"]
+    team_b_avg_total = team_b["avgGoals"]
+    avg_total = (team_a_avg_total + team_b_avg_total) / 2
+    if abs(team_a_avg_total - team_a_avg_total) < 0.6:
+        bonus += 10
+        print(f"2 teams under over found with similar average total goals: {team_a["Team"]} ,{team_b["Team"]}")
+
+    if abs(team_a_avg_total - team_a_avg_total) > 1.5:
+        bonus -= 10
+        print(f"*** 2 teams found with none similar average goals!!! {team_a["Team"]} ,{team_b["Team"]}***")
+
+    if desc == "2 Teams Under/Over 2-3 Range":
+
+        match avg_total:
+            case x if x < 1.0:
+                favorite = 1
+                bonus += 20
+            case x if 1.6 <= x < 2.65:
+                favorite = 3
+            case x if x > 3.1:
+                favorite = 2
+                high_bonus = (avg_total - 3) * 15
+                bonus = bonus + 30 + high_bonus
+            case _:
+                print("Other scoring range")
+                favorite = 0
 
 
-# ==========================================
-# Teams
-# ==========================================
+
+    elif desc == "2 Teams Under/Over":
+        pass
+    print(f"Summery  - Bonus: {bonus} ,favorite: {favorite} , avg_total: {avg_total}")
+    return jsonify({
+        "bonus": bonus,
+        "favorite": favorite,
+        "avg_total": avg_total
+    })
+
+
+
+@app.route("/<league_code>/teams")
+def get_teams(league_code):
+    url = f"{BASE_URL}/competitions/{league_code}/teams"
+    response = requests.get(url, headers=get_headers())
+
+    if response.status_code != 200:
+        return jsonify({
+            "error": response.status_code,
+            "details": response.text
+        }), response.status_code
+
+    data = response.json()
+    teams = []
+
+    for team in data.get("teams", []):
+        teams.append({
+            "id": team.get("id"),
+            "name": team.get("name"),
+            "shortName": team.get("shortName"),
+            "tla": team.get("tla")
+        })
+
+    return jsonify({
+        "league": league_code,
+        "total_teams": len(teams),
+        "teams": teams
+    })
+
+
 @app.route("/<league_code>/teams")
 def get_teams(league_code):
 
     url = f"{BASE_URL}/competitions/{league_code}/teams"
 
-    response = requests.get(
-        url,
-        headers=get_headers()
-    )
+    response = requests.get(url, headers=get_headers())
+
 
     if response.status_code != 200:
         return jsonify({
@@ -63,18 +129,13 @@ def get_teams(league_code):
     })
 
 
-# ==========================================
-# Matches
-# ==========================================
 @app.route("/<league_code>/matches")
 def matches(league_code):
 
     url = f"{BASE_URL}/competitions/{league_code}/matches"
 
-    response = requests.get(
-        url,
-        headers=get_headers()
-    )
+    response = requests.get(url,headers=get_headers())
+
 
     if response.status_code != 200:
         return jsonify({
@@ -110,18 +171,13 @@ def matches(league_code):
     })
 
 
-# ==========================================
-# Finished Results Only
-# ==========================================
 @app.route("/<league_code>/results")
 def results(league_code):
 
     url = f"{BASE_URL}/competitions/{league_code}/matches"
 
-    response = requests.get(
-        url,
-        headers=get_headers()
-    )
+    response = requests.get(url,headers=get_headers())
+
 
     if response.status_code != 200:
         return jsonify({
@@ -159,18 +215,13 @@ def results(league_code):
     })
 
 
-# ==========================================
-# Standings
-# ==========================================
 @app.route("/<league_code>/standings")
 def standings(league_code):
 
     url = f"{BASE_URL}/competitions/{league_code}/standings"
 
-    response = requests.get(
-        url,
-        headers=get_headers()
-    )
+    response = requests.get(url,headers=get_headers())
+
 
     if response.status_code != 200:
         return jsonify({
@@ -202,30 +253,14 @@ def standings(league_code):
         "standings": table
     })
 
-
-# ==========================================
-# All Stats
-# ==========================================
 @app.route("/<league_code>/all-stats")
 def all_stats(league_code):
 
-    standings_url = (
-        f"{BASE_URL}/competitions/{league_code}/standings"
-    )
+    standings_url = (f"{BASE_URL}/competitions/{league_code}/standings")
+    matches_url = (f"{BASE_URL}/competitions/{league_code}/matches")
 
-    matches_url = (
-        f"{BASE_URL}/competitions/{league_code}/matches"
-    )
-
-    standings_response = requests.get(
-        standings_url,
-        headers=get_headers()
-    )
-
-    matches_response = requests.get(
-        matches_url,
-        headers=get_headers()
-    )
+    standings_response = requests.get(standings_url,headers=get_headers())
+    matches_response = requests.get(matches_url,headers=get_headers())
 
     if standings_response.status_code != 200:
         return jsonify({
