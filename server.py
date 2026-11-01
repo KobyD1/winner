@@ -10,8 +10,7 @@ BASE_URL = "https://api.football-data.org/v4"
 
 
 def get_headers():
-    return { "X-Auth-Token": API_KEY}
-
+    return {"X-Auth-Token": API_KEY}
 
 
 @app.route("/")
@@ -20,12 +19,13 @@ def home():
         "status": "online",
         "api": "Football Data API"
     })
+
+
 from flask import request
 
 
 @app.route("/football-under", methods=["POST"])
 def calc_football_under_over_api_algo():
-
     data = request.get_json()
 
     team_a = data["team_a"]
@@ -38,12 +38,10 @@ def calc_football_under_over_api_algo():
     team_a_avg_total = team_a["avgGoals"]
     team_b_avg_total = team_b["avgGoals"]
 
-    avg_total = (team_a_avg_total +team_b_avg_total) / 2
-    difference = abs(team_a_avg_total -team_b_avg_total)
-
+    avg_total = (team_a_avg_total + team_b_avg_total) / 2
+    difference = abs(team_a_avg_total - team_b_avg_total)
 
     if difference < 0.6:
-
         bonus += 10
 
         print(
@@ -53,7 +51,6 @@ def calc_football_under_over_api_algo():
         )
 
     if difference > 1.5:
-
         bonus -= 10
 
         print(
@@ -79,10 +76,9 @@ def calc_football_under_over_api_algo():
 
                 favorite = 2
 
-                high_bonus = ( avg_total - 3) * 15
+                high_bonus = (avg_total - 3) * 15
 
-
-                bonus += (30 +high_bonus)
+                bonus += (30 + high_bonus)
 
             case _:
 
@@ -111,7 +107,6 @@ def calc_football_under_over_api_algo():
 
 @app.route("/<league_code>/teams")
 def get_teams(league_code):
-
     url = f"{BASE_URL}/competitions/{league_code}/teams"
 
     response = requests.get(
@@ -130,7 +125,6 @@ def get_teams(league_code):
     teams = []
 
     for team in data.get("teams", []):
-
         teams.append({
             "id": team.get("id"),
             "name": team.get("name"),
@@ -147,13 +141,9 @@ def get_teams(league_code):
 
 @app.route("/<league_code>/matches")
 def matches(league_code):
-
     url = f"{BASE_URL}/competitions/{league_code}/matches"
 
-    response = requests.get(
-        url,
-        headers=get_headers()
-    )
+    response = requests.get(url, headers=get_headers())
 
     if response.status_code != 200:
         return jsonify({
@@ -166,10 +156,9 @@ def matches(league_code):
     results = []
 
     for match in data.get("matches", []):
+        full_time = match.get("score", {}
 
-        full_time = match.get(
-            "score", {}
-        ).get(
+                              ).get(
             "fullTime", {}
         )
 
@@ -191,13 +180,9 @@ def matches(league_code):
 
 @app.route("/<league_code>/results")
 def results(league_code):
-
     url = f"{BASE_URL}/competitions/{league_code}/matches"
 
-    response = requests.get(
-        url,
-        headers=get_headers()
-    )
+    response = requests.get(url, headers=get_headers())
 
     if response.status_code != 200:
         return jsonify({
@@ -237,13 +222,9 @@ def results(league_code):
 
 @app.route("/<league_code>/standings")
 def standings(league_code):
-
     url = f"{BASE_URL}/competitions/{league_code}/standings"
 
-    response = requests.get(
-        url,
-        headers=get_headers()
-    )
+    response = requests.get(url, headers=get_headers())
 
     if response.status_code != 200:
         return jsonify({
@@ -256,7 +237,6 @@ def standings(league_code):
     table = []
 
     for row in data["standings"][0]["table"]:
-
         table.append({
             "position": row["position"],
             "team": row["team"]["name"],
@@ -275,16 +255,12 @@ def standings(league_code):
         "standings": table
     })
 
+
 @app.route("/<league_code>/all-stats")
 def all_stats(league_code):
+    standings_url = (f"{BASE_URL}/competitions/{league_code}/standings")
 
-    standings_url = (
-        f"{BASE_URL}/competitions/{league_code}/standings"
-    )
-
-    matches_url = (
-        f"{BASE_URL}/competitions/{league_code}/matches"
-    )
+    matches_url = (f"{BASE_URL}/competitions/{league_code}/matches")
 
     standings_response = requests.get(
         standings_url,
@@ -316,7 +292,6 @@ def all_stats(league_code):
     table = standings_data["standings"][0]["table"]
 
     for row in table:
-
         team_name = row["team"]["name"]
 
         teams[team_name] = {
@@ -350,8 +325,8 @@ def all_stats(league_code):
             "home_goals": full_time["home"],
             "away_goals": full_time["away"],
             "total_goals": (
-                full_time["home"] +
-                full_time["away"]
+                    full_time["home"] +
+                    full_time["away"]
             )
         }
 
@@ -364,6 +339,14 @@ def all_stats(league_code):
     return jsonify({
         "competition": league_code,
         "teams": teams
+    })
+
+@app.route("/ui/config")
+def config():
+    BASE_URL = os.getenv("URL_WINNER")
+
+    return jsonify({
+        "ui_base_url": BASE_URL
     })
 
 
