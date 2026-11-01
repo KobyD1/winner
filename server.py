@@ -161,35 +161,28 @@ def calc_football_under_over_api_algo():
     if desc == "2 Teams Under/Over 2-3 Range":
 
         match avg_total:
-
             case x if x < 1.0:
-
                 favorite = 1
                 bonus += 20
-                home_count = team_a["count_0_1"]
-                away_count = team_b["count_0_1"]
+                home_count = team_a.get("count_0_1", 0)
+                away_count = team_b.get("count_0_1", 0)
 
             case x if 1.6 <= x < 2.65:
-
                 favorite = 3
-                home_count = team_a["count_2_3"]
-                away_count = team_b["count_2_3"]
+                home_count = team_a.get("count_2_3", 0)
+                away_count = team_b.get("count_2_3", 0)
 
             case x if x > 3.1:
-
                 favorite = 2
-
                 high_bonus = (avg_total - 3) * 15
-                home_count = team_a["count_4_plus"]
-                away_count = team_b["count_4_plus"]
-
-                bonus += (30 + high_bonus)
+                home_count = team_a.get("count_4_plus", 0)
+                away_count = team_b.get("count_4_plus", 0)
+                bonus += 30 + high_bonus
 
             case _:
-
-                print("Other scoring range")
                 favorite = 0
-
+                home_count = 0
+                away_count = 0
     elif desc == "2 Teams Under/Over":
 
         if avg_total < 2.5:
