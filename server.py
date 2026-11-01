@@ -115,7 +115,7 @@ def calc_football_under_over_api_algo():
     )
 
     return jsonify({
-        "bonus": round(bonus, 2),
+        "score": round(bonus, 2),
         "favorite": favorite,
         "avg_total": round(avg_total, 2)
     })
