@@ -5,15 +5,13 @@ import os
 app = Flask(__name__)
 
 API_KEY = os.getenv("FOOTBALL_API_KEY")
-API_KEY = "6e8b3c65a58f4a05b874d72fe4170fd7"
 
 BASE_URL = "https://api.football-data.org/v4"
 
 
 def get_headers():
-    return {
-        "X-Auth-Token": API_KEY
-    }
+    return { "X-Auth-Token": API_KEY}
+
 
 
 @app.route("/")
@@ -40,15 +38,9 @@ def calc_football_under_over_api_algo():
     team_a_avg_total = team_a["avgGoals"]
     team_b_avg_total = team_b["avgGoals"]
 
-    avg_total = (
-        team_a_avg_total +
-        team_b_avg_total
-    ) / 2
+    avg_total = (team_a_avg_total +team_b_avg_total) / 2
+    difference = abs(team_a_avg_total -team_b_avg_total)
 
-    difference = abs(
-        team_a_avg_total -
-        team_b_avg_total
-    )
 
     if difference < 0.6:
 
@@ -87,14 +79,10 @@ def calc_football_under_over_api_algo():
 
                 favorite = 2
 
-                high_bonus = (
-                    avg_total - 3
-                ) * 15
+                high_bonus = ( avg_total - 3) * 15
 
-                bonus += (
-                    30 +
-                    high_bonus
-                )
+
+                bonus += (30 +high_bonus)
 
             case _:
 
@@ -120,9 +108,7 @@ def calc_football_under_over_api_algo():
         "avg_total": round(avg_total, 2)
     })
 
-# ==========================================
-# Teams
-# ==========================================
+
 @app.route("/<league_code>/teams")
 def get_teams(league_code):
 
