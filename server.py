@@ -22,46 +22,102 @@ def home():
         "status": "online",
         "api": "Football Data API"
     })
-@app.route("/<league_code>/football-under/<taeam_a/<team_b>/<desc>")
-def calc_football_under_over_api_algo(self, team_a, team_b, desc):
+from flask import request
+
+
+@app.route("/football-under", methods=["POST"])
+def calc_football_under_over_api_algo():
+
+    data = request.get_json()
+
+    team_a = data["team_a"]
+    team_b = data["team_b"]
+    desc = data["desc"]
+
     bonus = 0
-    favorite = ""
+    favorite = 0
+
     team_a_avg_total = team_a["avgGoals"]
     team_b_avg_total = team_b["avgGoals"]
-    avg_total = (team_a_avg_total + team_b_avg_total) / 2
-    if abs(team_a_avg_total - team_a_avg_total) < 0.6:
-        bonus += 10
-        print(f"2 teams under over found with similar average total goals: {team_a["Team"]} ,{team_b["Team"]}")
 
-    if abs(team_a_avg_total - team_a_avg_total) > 1.5:
+    avg_total = (
+        team_a_avg_total +
+        team_b_avg_total
+    ) / 2
+
+    difference = abs(
+        team_a_avg_total -
+        team_b_avg_total
+    )
+
+    if difference < 0.6:
+
+        bonus += 10
+
+        print(
+            f"2 teams under over found with similar "
+            f"average total goals: "
+            f"{team_a['Team']} , {team_b['Team']}"
+        )
+
+    if difference > 1.5:
+
         bonus -= 10
-        print(f"*** 2 teams found with none similar average goals!!! {team_a["Team"]} ,{team_b["Team"]}***")
+
+        print(
+            f"*** 2 teams found with none similar "
+            f"average goals!!! "
+            f"{team_a['Team']} , {team_b['Team']} ***"
+        )
 
     if desc == "2 Teams Under/Over 2-3 Range":
 
         match avg_total:
+
             case x if x < 1.0:
+
                 favorite = 1
                 bonus += 20
+
             case x if 1.6 <= x < 2.65:
+
                 favorite = 3
+
             case x if x > 3.1:
+
                 favorite = 2
-                high_bonus = (avg_total - 3) * 15
-                bonus = bonus + 30 + high_bonus
+
+                high_bonus = (
+                    avg_total - 3
+                ) * 15
+
+                bonus += (
+                    30 +
+                    high_bonus
+                )
+
             case _:
+
                 print("Other scoring range")
                 favorite = 0
 
-
-
     elif desc == "2 Teams Under/Over":
-        pass
-    print(f"Summery  - Bonus: {bonus} ,favorite: {favorite} , avg_total: {avg_total}")
+
+        if avg_total < 2.5:
+            favorite = 1
+        else:
+            favorite = 2
+
+    print(
+        f"Summary - Bonus: {bonus}, "
+        f"favorite: {favorite}, "
+        f"avg_total: {avg_total}"
+    )
+
     return jsonify({
-        "bonus": bonus,
+        "bonus": round(bonus, 2),
         "favorite": favorite,
-        "avg_total": avg_total
+        "avg_total": round(avg_total, 2)
     })
 
 # ==========================================
