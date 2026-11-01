@@ -7,57 +7,35 @@ app = Flask(__name__)
 API_KEY = os.getenv("FOOTBALL_API_KEY")
 API_KEY = "6e8b3c65a58f4a05b874d72fe4170fd7"
 
+BASE_URL = "https://api.football-data.org/v4"
+
+
+def get_headers():
+    return {
+        "X-Auth-Token": API_KEY
+    }
+
 
 @app.route("/")
 def home():
     return jsonify({
         "status": "online",
-        "api": "Premier League Results"
+        "api": "Football Data API"
     })
 
 
-@app.route("/premier-league")
-def premier_league():
-    url = "https://api.football-data.org/v4/competitions/PL/matches"
+# ==========================================
+# Teams
+# ==========================================
+@app.route("/<league_code>/teams")
+def get_teams(league_code):
 
-    headers = {
-        "X-Auth-Token": "6e8b3c65a58f4a05b874d72fe4170fd7"
-    }
+    url = f"{BASE_URL}/competitions/{league_code}/teams"
 
-    response = requests.get(url, headers=headers)
-
-    if response.status_code != 200:
-        return jsonify({
-            "error": response.status_code,
-            "details": response.text
-        }), response.status_code
-
-    data = response.json()
-
-    results = []
-
-    for match in data.get("matches", []):
-        full_time = match.get("score", {}).get("fullTime", {})
-
-        results.append({
-            "matchday": match.get("matchday"),
-            "date": match.get("utcDate"),
-            "status": match.get("status"),
-            "home_team": match.get("homeTeam", {}).get("name"),
-            "away_team": match.get("awayTeam", {}).get("name"),
-    })
-
-
-@app.route("/teams")
-def get_teams():
-
-    url = "https://api.football-data.org/v4/competitions/PL/teams"
-
-    headers = {
-        "X-Auth-Token": API_KEY
-    }
-
-    response = requests.get(url, headers=headers)
+    response = requests.get(
+        url,
+        headers=get_headers()
+    )
 
     if response.status_code != 200:
         return jsonify({
@@ -79,20 +57,24 @@ def get_teams():
         })
 
     return jsonify({
+        "league": league_code,
         "total_teams": len(teams),
         "teams": teams
     })
 
-@app.route("/all-results")
-def all_results():
 
-    url = "https://api.football-data.org/v4/competitions/PL/matches"
+# ==========================================
+# Matches
+# ==========================================
+@app.route("/<league_code>/matches")
+def matches(league_code):
 
-    headers = {
-        "X-Auth-Token": API_KEY
-    }
+    url = f"{BASE_URL}/competitions/{league_code}/matches"
 
-    response = requests.get(url, headers=headers)
+    response = requests.get(
+        url,
+        headers=get_headers()
+    )
 
     if response.status_code != 200:
         return jsonify({
@@ -106,7 +88,61 @@ def all_results():
 
     for match in data.get("matches", []):
 
-        full_time = match.get("score", {}).get("fullTime", {})
+        full_time = match.get(
+            "score", {}
+        ).get(
+            "fullTime", {}
+        )
+
+        results.append({
+            "matchday": match.get("matchday"),
+            "date": match.get("utcDate"),
+            "status": match.get("status"),
+            "home_team": match.get("homeTeam", {}).get("name"),
+            "away_team": match.get("awayTeam", {}).get("name"),
+            "home_goals": full_time.get("home"),
+            "away_goals": full_time.get("away")
+        })
+
+    return jsonify({
+        "league": league_code,
+        "matches": results
+    })
+
+
+# ==========================================
+# Finished Results Only
+# ==========================================
+@app.route("/<league_code>/results")
+def results(league_code):
+
+    url = f"{BASE_URL}/competitions/{league_code}/matches"
+
+    response = requests.get(
+        url,
+        headers=get_headers()
+    )
+
+    if response.status_code != 200:
+        return jsonify({
+            "error": response.status_code,
+            "details": response.text
+        }), response.status_code
+
+    data = response.json()
+
+    results = []
+
+    for match in data.get("matches", []):
+
+        if match.get("status") != "FINISHED":
+            continue
+
+        full_time = match.get(
+            "score", {}
+        ).get(
+            "fullTime", {}
+        )
 
         results.append({
             "matchday": match.get("matchday"),
@@ -117,17 +153,24 @@ def all_results():
             "away_goals": full_time.get("away")
         })
 
-    return jsonify(results)
-@app.route("/standings")
-def standings():
+    return jsonify({
+        "league": league_code,
+        "results": results
+    })
 
-    url = "https://api.football-data.org/v4/competitions/PL/standings"
 
-    headers = {
-        "X-Auth-Token": API_KEY
-    }
+# ==========================================
+# Standings
+# ==========================================
+@app.route("/<league_code>/standings")
+def standings(league_code):
 
-    response = requests.get(url, headers=headers)
+    url = f"{BASE_URL}/competitions/{league_code}/standings"
+
+    response = requests.get(
+        url,
+        headers=get_headers()
+    )
 
     if response.status_code != 200:
         return jsonify({
@@ -154,26 +197,34 @@ def standings():
             "goal_difference": row["goalDifference"]
         })
 
-    return jsonify(table)
+    return jsonify({
+        "league": league_code,
+        "standings": table
+    })
 
-@app.route("/all-stats")
-def all_stats():
 
-    headers = {
-        "X-Auth-Token": API_KEY
-    }
+# ==========================================
+# All Stats
+# ==========================================
+@app.route("/<league_code>/all-stats")
+def all_stats(league_code):
 
-    standings_url = "https://api.football-data.org/v4/competitions/PL/standings"
-    matches_url = "https://api.football-data.org/v4/competitions/PL/matches"
+    standings_url = (
+        f"{BASE_URL}/competitions/{league_code}/standings"
+    )
+
+    matches_url = (
+        f"{BASE_URL}/competitions/{league_code}/matches"
+    )
 
     standings_response = requests.get(
         standings_url,
-        headers=headers
+        headers=get_headers()
     )
 
     matches_response = requests.get(
         matches_url,
-        headers=headers
+        headers=get_headers()
     )
 
     if standings_response.status_code != 200:
@@ -208,6 +259,7 @@ def all_stats():
             "lost": row["lost"],
             "goals_for": row["goalsFor"],
             "goals_against": row["goalsAgainst"],
+            "goal_difference": row["goalDifference"],
             "matches": []
         }
 
@@ -241,6 +293,14 @@ def all_stats():
             teams[away_team]["matches"].append(game)
 
     return jsonify({
-        "competition": "Premier League",
+        "competition": league_code,
         "teams": teams
     })
+
+
+if __name__ == "__main__":
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=True
+    )
