@@ -23,7 +23,27 @@ def home():
     })
 
 
+@app.route("/league-code/<league_name>")
+def get_league_code_route(league_name):
 
+    match league_name:
+
+        case "Spain":
+            league_code = "PD"
+
+        case "England-PLeague":
+            league_code = "PL"
+
+        case "NBA":
+            league_code = "NBA"
+
+        case _:
+            league_code = None
+
+    return jsonify({
+        "league_name": league_name,
+        "league_code": league_code
+    })
 
 
 @app.route("/football-banker", methods=["POST"])
