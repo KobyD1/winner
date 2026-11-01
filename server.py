@@ -39,7 +39,7 @@ def get_league_code_route(league_name):
         case "NBA":
             league_code = "NBA"
 
-        case "Italy":
+        case "Italy-Serie A":
             league_code = "SA"
 
         case _:
