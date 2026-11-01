@@ -1,0 +1,21 @@
+{
+  "modes": {},
+  "colors": {},
+  "hide_summary": false,
+  "days_var": "DAYS",
+  "days_options": [
+    "0",
+    "1",
+    "2",
+    "3"
+  ],
+  "last_days": "1",
+  "league_var": "LEAGUE",
+  "league_options": [
+    "Spain",
+    "England-PLeague",
+    "NBA",
+    "Italy-Serie A"
+  ],
+  "last_league": "Italy-Serie A"
+}

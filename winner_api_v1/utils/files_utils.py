@@ -5,7 +5,7 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(ROOT_DIR))
 
-from winner_final.globals import EXCEL_PREFIX
+from winner_api_v1.globals import EXCEL_PREFIX
 
 
 import unicodedata
