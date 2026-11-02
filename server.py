@@ -488,41 +488,64 @@ def calc_nba_under():
             2
         )
     })
-@app.route("/nba/get-teams", methods=["POST"])
-def get_nba_teams():
-    print("Getting  NBA teams data  based on the request data...")
+import pandas as pd
+import requests
+from flask import jsonify, request
+
+@app.route("/nba/get-teams-espn", methods=["POST"])
+def get_nba_teams_espn():
+
     data = request.get_json()
 
     team1 = data["team1"]
     team2 = data["team2"]
-    season = data.get("season", "2025-26")
-    app.logger.info(f"Fetching NBA teams data for {team1} and {team2} for season {season}")
 
-    df = LeagueDashTeamStats(per_mode_detailed="PerGame",season=season).get_data_frames()[0]
-    app.logger.info(f"data={df}")
+    try:
 
-    row1 = df[df["TEAM_NAME"] == team1].iloc[0]
-    row2 = df[df["TEAM_NAME"] == team2].iloc[0]
-    app.logger.info (row1)
+        url = "https://www.espn.com/nba/stats/team/_/table/offensive/sort/avgPoints"
 
-    avg_pts = (row1["PTS"] + row2["PTS"]) / 2
-    avg_3pm = (row1["FG3M"] + row2["FG3M"]) / 2
-    app.logger.info(f"Average PTS: {avg_pts}, Average 3PM: {avg_3pm}")
+        tables = pd.read_html(url)
 
-    return jsonify({
-        "team_a": {
-            "name": team1,
-            "PTS": float(row1["PTS"]),
-            "FG3M": float(row1["FG3M"])
-        },
-        "team_b": {
-            "name": team2,
-            "PTS": float(row2["PTS"]),
-            "FG3M": float(row2["FG3M"])
-        },
-        "avg_pts": round(avg_pts, 2),
-        "avg_3pm": round(avg_3pm, 2)
-    })
+        df = tables[0]
+
+        app.logger.info(f"Rows loaded: {len(df)}")
+
+        row1 = df[df["TEAM"].str.contains(team1, case=False, na=False)]
+        row2 = df[df["TEAM"].str.contains(team2, case=False, na=False)]
+
+        if row1.empty or row2.empty:
+            return jsonify({
+                "error": "Team not found"
+            }), 404
+
+        row1 = row1.iloc[0]
+        row2 = row2.iloc[0]
+
+        avg_pts = (float(row1["PTS"]) + float(row2["PTS"])) / 2
+        avg_3pm = (float(row1["3PM"]) + float(row2["3PM"])) / 2
+
+        return jsonify({
+            "team_a": {
+                "name": team1,
+                "PTS": float(row1["PTS"]),
+                "FG3M": float(row1["3PM"])
+            },
+            "team_b": {
+                "name": team2,
+                "PTS": float(row2["PTS"]),
+                "FG3M": float(row2["3PM"])
+            },
+            "avg_pts": round(avg_pts, 2),
+            "avg_3pm": round(avg_3pm, 2)
+        })
+
+    except Exception as e:
+
+        app.logger.exception(e)
+
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 
 
