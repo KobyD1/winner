@@ -504,60 +504,89 @@ def nba_team_stats():
         "rows": len(tables[0])
     })
 
+
+from flask import Flask, request, jsonify
+import pandas as pd
+import requests
+
+app = Flask(__name__)
+
+
 @app.route("/nba/get-teams-espn", methods=["POST"])
 def get_nba_teams_espn():
-
     data = request.get_json()
+
+    if not data or "team1" not in data or "team2" not in data:
+        return jsonify({"error": "Missing team1 or team2 in request body"}), 400
 
     team1 = data["team1"]
     team2 = data["team2"]
 
     try:
-
         url = "https://www.espn.com/nba/stats/team/_/table/offensive/sort/avgPoints"
 
-        tables = pd.read_html(url)
+        # הוספת User-Agent כדי למנוע חסימה מ-ESPN
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
 
-        df = tables[0]
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+
+        # ESPN מפצל לרוב ל-2 טבלאות: שמות ונתונים
+        tables = pd.read_html(response.text)
+
+        if len(tables) >= 2:
+            df = pd.concat([tables[0], tables[1]], axis=1)
+        else:
+            df = tables[0]
 
         app.logger.info(f"Rows loaded: {len(df)}")
 
-        row1 = df[df["TEAM"].str.contains(team1, case=False, na=False)]
-        row2 = df[df["TEAM"].str.contains(team2, case=False, na=False)]
+        # חיפוש גמיש יותר בשורות לפי שם הקבוצה
+        row1 = df[df.apply(lambda row: row.astype(str).str.contains(team1, case=False, na=False).any(), axis=1)]
+        row2 = df[df.apply(lambda row: row.astype(str).str.contains(team2, case=False, na=False).any(), axis=1)]
 
         if row1.empty or row2.empty:
-            return jsonify({
-                "error": "Team not found"
-            }), 404
+            return jsonify({"error": "One or both teams not found"}), 404
 
         row1 = row1.iloc[0]
         row2 = row2.iloc[0]
 
-        avg_pts = (float(row1["PTS"]) + float(row2["PTS"])) / 2
-        avg_3pm = (float(row1["3PM"]) + float(row2["3PM"])) / 2
+        # שליפת הערכים (בהתאם לשמות העמודות בטבלה של ESPN)
+        pts1 = float(row1["PTS"])
+        pts2 = float(row2["PTS"])
+
+        # עמודת שלשות ב-ESPN מסומנת לרוב כ-3PM (או FG3M תלוי בגרסה)
+        col_3pm = "3PM" if "3PM" in df.columns else "FG3M"
+        fg3m1 = float(row1[col_3pm])
+        fg3m2 = float(row2[col_3pm])
+
+        avg_pts = (pts1 + pts2) / 2
+        avg_3pm = (fg3m1 + fg3m2) / 2
 
         return jsonify({
             "team_a": {
                 "name": team1,
-                "PTS": float(row1["PTS"]),
-                "FG3M": float(row1["3PM"])
+                "PTS": pts1,
+                "FG3M": fg3m1
             },
             "team_b": {
                 "name": team2,
-                "PTS": float(row2["PTS"]),
-                "FG3M": float(row2["3PM"])
+                "PTS": pts2,
+                "FG3M": fg3m2
             },
             "avg_pts": round(avg_pts, 2),
             "avg_3pm": round(avg_3pm, 2)
         })
 
     except Exception as e:
-
         app.logger.exception(e)
+        return jsonify({"error": str(e)}), 500
 
-        return jsonify({
-            "error": str(e)
-        }), 500
+
+if __name__ == "__main__":
+    app.run(debug=True)
 
 
 
