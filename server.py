@@ -447,15 +447,16 @@ def all_stats(league_code):
 # =======================================
 # NBA API
 # ======================================
+
+
+from flask import request, jsonify
 import requests
 from datetime import datetime, timedelta, timezone
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from flask import request, jsonify
 
 
-def fetch_team_averages(team_id):
+def fetch_team_averages_sequential(team_id):
     """
-    פונקציית עזר לשליפת וחישוב ממוצע נקודות ושלשות לקבוצה בודדת לפי team_id.
+    מחשב ממוצע נקודות ושלשות לקבוצת NBA בשנה האחרונה בצורה סדרתית (ללא Threads).
     """
     schedule_url = f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/{team_id}/schedule"
     try:
@@ -485,8 +486,8 @@ def fetch_team_averages(team_id):
     total_3pt_made = 0
     games_count = 0
 
-    # שליפה מקבילית של סיכומי המשחקים של אותה קבוצה
-    def fetch_game_stats(event_id):
+    # מעבר סדרתי רגיל על כל משחק ומשחק
+    for event_id in valid_events:
         summary_url = f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event={event_id}"
         try:
             summary_data = requests.get(summary_url, timeout=5).json()
@@ -516,25 +517,16 @@ def fetch_team_averages(team_id):
                             if str(comp_team.get("team", {}).get("id")) == str(team_id):
                                 points = float(comp_team.get("score", 0))
 
-                    return points, three_pt_made
+                    total_points += points
+                    total_3pt_made += three_pt_made
+                    games_count += 1
+                    break
         except Exception:
-            pass
-        return None
-
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = {executor.submit(fetch_game_stats, ev_id): ev_id for ev_id in valid_events}
-        for future in as_completed(futures):
-            res = future.result()
-            if res:
-                points, three_pt = res
-                total_points += points
-                total_3pt_made += three_pt
-                games_count += 1
+            continue
 
     if games_count == 0:
         return None
 
-    # שליפת שם הקבוצה מה-schedule
     team_name = schedule_data.get("team", {}).get("displayName", f"Team {team_id}")
 
     return {
@@ -555,8 +547,7 @@ def get_nba_team_espn():
     team_id = data["team_id"]
 
     try:
-        # שימוש בפונקציית העזר הקיימת לשליפת הממוצעים לקבוצה בודדת
-        res = fetch_team_averages(team_id)
+        res = fetch_team_averages_sequential(team_id)
 
         if not res:
             return jsonify({"error": "Team not found or has no recent games"}), 404
