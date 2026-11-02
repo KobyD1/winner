@@ -3,7 +3,7 @@ from flask import request
 from pyairtable import Api
 from nba_api.stats.endpoints import LeagueDashTeamStats
 
-import os
+import logging
 
 import requests
 import os
@@ -15,6 +15,8 @@ API_KEY = os.getenv("FOOTBALL_API_KEY")
 BASE_URL = "https://api.football-data.org/v4"
 
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 def get_headers():
     return {"X-Auth-Token": API_KEY}
 
@@ -449,6 +451,8 @@ def all_stats(league_code):
 @app.route("/nba/calc-under", methods=["POST"])
 def calc_nba_under():
     print("Calculating NBA Under/Over based on the request data...")
+    app.logger.info("NBA Calculation Called")
+
     data = request.get_json()
 
     teams = data["teams"]
