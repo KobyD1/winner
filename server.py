@@ -446,9 +446,9 @@ def all_stats(league_code):
 # NBA API
 # ======================================
 
-@app.route("/nba/calc_under", methods=["POST"])
+@app.route("/nba/calc-under", methods=["POST"])
 def calc_nba_under():
-
+    print("Calculating NBA Under/Over based on the request data...")
     data = request.get_json()
 
     teams = data["teams"]
@@ -484,8 +484,9 @@ def calc_nba_under():
             2
         )
     })
-@app.route("/nba/compare-teams", methods=["POST"])
-def compare_nba_teams():
+@app.route("/nba/get-teams", methods=["POST"])
+def get_nba_teams():
+    print("Getting  NBA teams data  based on the request data...")
 
     data = request.get_json()
 
