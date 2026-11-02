@@ -81,21 +81,14 @@ def calc_football_banker_algo():
     points_diff = abs(points_diff)
 
     if position_diff_abs > 9:
+        logger.info(f"Teams found for Banker Algo by position: {position_diff_abs}")
 
-        print(
-            "Teams found for Banker Algo by position"
-        )
 
         scores += position_diff_abs * 10
 
-    if (
-        position_diff_abs > 9 and
-        points_diff > 9
-    ):
+    if (position_diff_abs > 9) and (points_diff > 9):
 
-        print(
-            "Teams found for Banker Algo by points"
-        )
+        logger.info(f"Teams found for Banker Algo by points: {points_diff}")
 
         scores += points_diff * 10
 
@@ -114,6 +107,7 @@ def calc_football_banker_algo():
         position_diff_abs > 9
     ):
 
+        logger.info(f"Teams found for Banker Algo: {position_diff_abs}")
         favorite = 2
 
     print(
@@ -147,7 +141,7 @@ def calc_football_under_over_api_algo():
     if difference < 0.6:
         bonus += 10
 
-        print(
+        logger.info(
             f"2 teams under over found with similar "
             f"average total goals: "
             f"{team_a['Team']} , {team_b['Team']}"
@@ -156,7 +150,7 @@ def calc_football_under_over_api_algo():
     if difference > 1.5:
         bonus -= 10
 
-        print(
+        logger.info(
             f"*** 2 teams found with none similar "
             f"average goals!!! "
             f"{team_a['Team']} , {team_b['Team']} ***"
@@ -194,7 +188,7 @@ def calc_football_under_over_api_algo():
         else:
             favorite = 2
 
-    print(
+    logger.info(
         f"Summary - Bonus: {bonus}, "
         f"favorite: {favorite}, "
         f"avg_total: {avg_total}"
@@ -213,10 +207,7 @@ def calc_football_under_over_api_algo():
 def get_teams(league_code):
     url = f"{BASE_URL}/competitions/{league_code}/teams"
 
-    response = requests.get(
-        url,
-        headers=get_headers()
-    )
+    response = requests.get(url, headers=get_headers())
 
     if response.status_code != 200:
         return jsonify({
@@ -363,18 +354,12 @@ def standings(league_code):
 @app.route("/<league_code>/all-stats")
 def all_stats(league_code):
     standings_url = (f"{BASE_URL}/competitions/{league_code}/standings")
-
     matches_url = (f"{BASE_URL}/competitions/{league_code}/matches")
 
-    standings_response = requests.get(
-        standings_url,
-        headers=get_headers()
-    )
+    standings_response = requests.get(standings_url,headers=get_headers())
+    matches_response = requests.get(matches_url,headers=get_headers())
 
-    matches_response = requests.get(
-        matches_url,
-        headers=get_headers()
-    )
+
 
     if standings_response.status_code != 200:
         return jsonify({
@@ -392,7 +377,6 @@ def all_stats(league_code):
     matches_data = matches_response.json()
 
     teams = {}
-
     table = standings_data["standings"][0]["table"]
 
     for row in table:
@@ -449,46 +433,53 @@ def all_stats(league_code):
 # ======================================
 
 
-
 @app.route("/nba/calc-under", methods=["POST"])
 def calc_under():
-        # שליפת נתוני ה-JSON שנשלחו מה-Client
     req_data = request.get_json()
 
     if not req_data:
         return jsonify({"error": "לא התקבלו נתונים בגוף הבקשה"}), 400
-
+    game = req_data["table_data"]["game"]
+    rate = req_data["table_data"]["rate"]
     team1 = req_data.get("team1")
     team2 = req_data.get("team2")
     season = req_data.get("season", "2025-26")
-    data = req_data.get("data", [])  # רשימת המילונים (לא ממוינת)
+    data = req_data.get("data", [])
 
-    # חיפוש הקבוצות ברשימה הלא ממוيנת
     row1 = next((item for item in data if item.get("TEAM_NAME") == team1), None)
     row2 = next((item for item in data if item.get("TEAM_NAME") == team2), None)
 
     if not row1 or not row2:
         return jsonify({"error": "אחת או יותר מהקבוצות לא נמצאו ברשימה שנשלחה"}), 404
 
-    # חישוב הממוצעים המשותפים
     avg_pts = (row1["PTS"] + row2["PTS"]) / 2
     avg_3pm = (row1["FG3M"] + row2["FG3M"]) / 2
+    bonuse = 0
 
-    # הדפסות ללוג של השרת
-    print(f"Comparing {team1} and {team2} for the {season} season:")
-    print(f"\n{team1}")
-    print(f"PTS: {row1['PTS']:.1f}")
-    print(f"3PM: {row1['FG3M']:.1f}")
+    if avg_pts - rate > 8:
+        favorite = 1
+    elif rate - avg_pts > 8:
+        favorite = 2
+    else:
+        favorite = 0
 
-    print(f"\n{team2}")
-    print(f"PTS: {row2['PTS']:.1f}")
-    print(f"3PM: {row2['FG3M']:.1f}")
+    if abs(avg_pts - rate) > 15:
+        bonuse = 20
 
-    print("\nממוצעים משותפים")
-    print(f"PTS: {avg_pts:.1f}")
-    print(f"3PM: {avg_3pm:.1f}")
+    logger.info(f"Comparing {team1} and {team2} for the {season} season:")
+    logger.info(f"\n{team1}")
+    logger.info(f"PTS: {row1['PTS']:.1f}")
+    logger.info(f"3PM: {row1['FG3M']:.1f}")
 
-    # החזרת התשובה כ-JSON בחזרה ל-Client
+    logger.info(f"\n{team2}")
+    logger.info(f"PTS: {row2['PTS']:.1f}")
+    logger.info(f"3PM: {row2['FG3M']:.1f}")
+
+    logger.info(f"Avg. combined")
+    logger.info(f"PTS: {avg_pts:.1f}")
+    logger.info(f"3PM: {avg_3pm:.1f}")
+    logger.info(f"Favorite: {favorite}, Game: {game}, Rate: {rate}, Bonuse: {bonuse}")
+
     return jsonify({
         "season": season,
         "team_a": {
@@ -502,11 +493,13 @@ def calc_under():
             "FG3M": float(row2["FG3M"])
         },
         "avg_pts": round(float(avg_pts), 1),
-        "avg_3pm": round(float(avg_3pm), 1)
+        "avg_3pm": round(float(avg_3pm), 1),
+        "favorite": favorite,
+        "game": game,
+        "rate": rate,
+        "bonuse": bonuse
+
     }), 200
-
-
-
 
 
 @app.route("/config")
@@ -526,31 +519,20 @@ def config():
 @app.route("/check-license/<hwid>")
 def check_license(hwid):
 
-
     AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
     AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID")
     AIRTABLE_TABLE_NAME = os.getenv("AIRTABLE_TABLE_NAME")
     api = Api(AIRTABLE_API_KEY)
 
-    table = api.table(
-        AIRTABLE_BASE_ID,
-        AIRTABLE_TABLE_NAME
-    )
-
+    table = api.table(AIRTABLE_BASE_ID,AIRTABLE_TABLE_NAME)
     formula = f"{{HWID}}='{hwid}'"
 
-    records = table.all(
-        formula=formula
-    )
+    records = table.all(formula=formula)
 
     if records:
 
         fields = records[0]["fields"]
-
-        status = fields.get(
-            "Status",
-            ""
-        )
+        status = fields.get("Status", "")
 
         return jsonify({
             "hwid": hwid,
@@ -558,10 +540,7 @@ def check_license(hwid):
             "valid": status == "Valid"
         })
 
-    table.create({
-        "HWID": hwid,
-        "Status": "Pending"
-    })
+    table.create({"HWID": hwid,"Status": "Pending"})
 
     return jsonify({
         "hwid": hwid,
