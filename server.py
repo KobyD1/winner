@@ -452,8 +452,8 @@ def calc_under():
     if not row1 or not row2:
         return jsonify({"error": "אחת או יותר מהקבוצות לא נמצאו ברשימה שנשלחה"}), 404
 
-    avg_pts = (row1["PTS"] + row2["PTS"]) / 2
-    avg_3pm = (row1["FG3M"] + row2["FG3M"]) / 2
+    avg_pts = (row1["PTS"] + row2["PTS"])
+    avg_3pm = (row1["FG3M"] + row2["FG3M"])
     bonuse = 0
 
     if avg_pts - rate > 8:
