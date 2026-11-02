@@ -454,7 +454,7 @@ def calc_under():
 
     avg_pts = (row1["PTS"] + row2["PTS"])
     avg_3pm = (row1["FG3M"] + row2["FG3M"])
-    bonuse = 0
+    score = 0
 
     if avg_pts - rate > 8:
         favorite = 1
@@ -464,7 +464,7 @@ def calc_under():
         favorite = 0
 
     if abs(avg_pts - rate) > 15:
-        bonuse = 20
+        score = 20
 
     logger.info(f"Comparing {team1} and {team2} for the {season} season:")
     logger.info(f"\n{team1}")
@@ -478,7 +478,7 @@ def calc_under():
     logger.info(f"Avg. combined")
     logger.info(f"PTS: {avg_pts:.1f}")
     logger.info(f"3PM: {avg_3pm:.1f}")
-    logger.info(f"Favorite: {favorite}, Game: {game}, Rate: {rate}, Bonuse: {bonuse}")
+    logger.info(f"Favorite: {favorite}, Game: {game}, Rate: {rate}, Score: {score}")
 
     return jsonify({
         "season": season,
@@ -497,7 +497,7 @@ def calc_under():
         "favorite": favorite,
         "game": game,
         "rate": rate,
-        "bonuse": bonuse
+        "score": score
 
     }), 200
 
