@@ -447,6 +447,134 @@ def all_stats(league_code):
 # =======================================
 # NBA API
 # ======================================
+import requests
+from datetime import datetime, timedelta, timezone
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from flask import request, jsonify
+
+
+def fetch_team_averages(team_id):
+    """
+    פונקציית עזר לשליפת וחישוב ממוצע נקודות ושלשות לקבוצה בודדת לפי team_id.
+    """
+    schedule_url = f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/{team_id}/schedule"
+    try:
+        schedule_data = requests.get(schedule_url, timeout=5).json()
+    except Exception:
+        return None
+
+    one_year_ago = datetime.now(timezone.utc) - timedelta(days=365)
+    valid_events = []
+
+    for event in schedule_data.get("events", []):
+        comp = event["competitions"][0]
+        if comp["status"]["type"]["completed"]:
+            event_date_str = event.get("date")
+            try:
+                event_date = datetime.strptime(event_date_str.split(".")[0].replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
+                event_date = event_date.replace(tzinfo=timezone.utc)
+                if event_date >= one_year_ago:
+                    valid_events.append(event["id"])
+            except Exception:
+                pass
+
+    if not valid_events:
+        return None
+
+    total_points = 0
+    total_3pt_made = 0
+    games_count = 0
+
+    # שליפה מקבילית של סיכומי המשחקים של אותה קבוצה
+    def fetch_game_stats(event_id):
+        summary_url = f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event={event_id}"
+        try:
+            summary_data = requests.get(summary_url, timeout=5).json()
+            boxscore = summary_data.get("boxscore", {})
+            teams_stats = boxscore.get("teams", [])
+
+            for t_stat in teams_stats:
+                t_info = t_stat.get("team", {})
+                if str(t_info.get("id")) == str(team_id):
+                    points = 0
+                    three_pt_made = 0
+
+                    for stat in t_stat.get("statistics", []):
+                        name = stat.get("name", "")
+                        if name == "points":
+                            points = float(stat.get("value", 0))
+                        elif "threePointFieldGoalsMade" in name or stat.get("abbreviation") == "3PT":
+                            val_str = str(stat.get("displayValue", "0"))
+                            if "-" in val_str:
+                                three_pt_made = float(val_str.split("-")[0])
+                            else:
+                                three_pt_made = float(stat.get("value", 0))
+
+                    if points == 0:
+                        competitions_header = summary_data.get("header", {}).get("competitions", [{}])[0]
+                        for comp_team in competitions_header.get("competitors", []):
+                            if str(comp_team.get("team", {}).get("id")) == str(team_id):
+                                points = float(comp_team.get("score", 0))
+
+                    return points, three_pt_made
+        except Exception:
+            pass
+        return None
+
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = {executor.submit(fetch_game_stats, ev_id): ev_id for ev_id in valid_events}
+        for future in as_completed(futures):
+            res = future.result()
+            if res:
+                points, three_pt = res
+                total_points += points
+                total_3pt_made += three_pt
+                games_count += 1
+
+    if games_count == 0:
+        return None
+
+    # שליפת שם הקבוצה מה-schedule
+    team_name = schedule_data.get("team", {}).get("displayName", f"Team {team_id}")
+
+    return {
+        "name": team_name,
+        "games_analyzed": games_count,
+        "PTS": round(total_points / games_count, 2),
+        "FG3M": round(total_3pt_made / games_count, 2)
+    }
+
+
+@app.route("/nba/get-teams-espn", methods=["POST"])
+def get_nba_teams_espn():
+    data = request.get_json()
+
+    if not data or "team1" not in data or "team2" not in data:
+        return jsonify({"error": "Missing team1 or team2 in request body (expected team IDs)"}), 400
+
+    team1_id = data["team1"]
+    team2_id = data["team2"]
+
+    # הרצת השליפה לשתי הקבוצות במקביל כדי לחסוך זמן תגובה
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        future1 = executor.submit(fetch_team_averages, team1_id)
+        future2 = executor.submit(fetch_team_averages, team2_id)
+
+        res1 = future1.result()
+        res2 = future2.result()
+
+    if not res1 or not res2:
+        return jsonify({"error": "One or both teams not found or have no recent games"}), 404
+
+    avg_pts = (res1["PTS"] + res2["PTS"]) / 2
+    avg_3pm = (res1["FG3M"] + res2["FG3M"]) / 2
+
+    return jsonify({
+        "team_a": res1,
+        "team_b": res2,
+        "avg_pts": round(avg_pts, 2),
+        "avg_3pm": round(avg_3pm, 2)
+    })
 
 @app.route("/nba/calc-under", methods=["POST"])
 def calc_nba_under():
@@ -505,85 +633,7 @@ def nba_team_stats():
     })
 
 
-from flask import Flask, request, jsonify
-import pandas as pd
-import requests
-
 app = Flask(__name__)
-
-
-@app.route("/nba/get-teams-espn", methods=["POST"])
-def get_nba_teams_espn():
-    data = request.get_json()
-
-    if not data or "team1" not in data or "team2" not in data:
-        return jsonify({"error": "Missing team1 or team2 in request body"}), 400
-
-    team1 = data["team1"]
-    team2 = data["team2"]
-
-    try:
-        url = "https://www.espn.com/nba/stats/team/_/table/offensive/sort/avgPoints"
-
-        # הוספת User-Agent כדי למנוע חסימה מ-ESPN
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        }
-
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-
-        # ESPN מפצל לרוב ל-2 טבלאות: שמות ונתונים
-        tables = pd.read_html(response.text)
-
-        if len(tables) >= 2:
-            df = pd.concat([tables[0], tables[1]], axis=1)
-        else:
-            df = tables[0]
-
-        app.logger.info(f"Rows loaded: {len(df)}")
-
-        # חיפוש גמיש יותר בשורות לפי שם הקבוצה
-        row1 = df[df.apply(lambda row: row.astype(str).str.contains(team1, case=False, na=False).any(), axis=1)]
-        row2 = df[df.apply(lambda row: row.astype(str).str.contains(team2, case=False, na=False).any(), axis=1)]
-
-        if row1.empty or row2.empty:
-            return jsonify({"error": "One or both teams not found"}), 404
-
-        row1 = row1.iloc[0]
-        row2 = row2.iloc[0]
-
-        # שליפת הערכים (בהתאם לשמות העמודות בטבלה של ESPN)
-        pts1 = float(row1["PTS"])
-        pts2 = float(row2["PTS"])
-
-        # עמודת שלשות ב-ESPN מסומנת לרוב כ-3PM (או FG3M תלוי בגרסה)
-        col_3pm = "3PM" if "3PM" in df.columns else "FG3M"
-        fg3m1 = float(row1[col_3pm])
-        fg3m2 = float(row2[col_3pm])
-
-        avg_pts = (pts1 + pts2) / 2
-        avg_3pm = (fg3m1 + fg3m2) / 2
-
-        return jsonify({
-            "team_a": {
-                "name": team1,
-                "PTS": pts1,
-                "FG3M": fg3m1
-            },
-            "team_b": {
-                "name": team2,
-                "PTS": pts2,
-                "FG3M": fg3m2
-            },
-            "avg_pts": round(avg_pts, 2),
-            "avg_3pm": round(avg_3pm, 2)
-        })
-
-    except Exception as e:
-        app.logger.exception(e)
-        return jsonify({"error": str(e)}), 500
-
 
 if __name__ == "__main__":
     app.run(debug=True)
