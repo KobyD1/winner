@@ -497,17 +497,17 @@ def get_nba_teams():
     team1 = data["team1"]
     team2 = data["team2"]
     season = data.get("season", "2025-26")
+    app.logger.info(f"Fetching NBA teams data for {team1} and {team2} for season {season}")
 
-    df = LeagueDashTeamStats(
-        per_mode_detailed="PerGame",
-        season=season
-    ).get_data_frames()[0]
+    df = LeagueDashTeamStats(per_mode_detailed="PerGame",season=season).get_data_frames()[0]
 
     row1 = df[df["TEAM_NAME"] == team1].iloc[0]
     row2 = df[df["TEAM_NAME"] == team2].iloc[0]
+    app.logger.info (row1)
 
     avg_pts = (row1["PTS"] + row2["PTS"]) / 2
     avg_3pm = (row1["FG3M"] + row2["FG3M"]) / 2
+    app.logger.info(f"Average PTS: {avg_pts}, Average 3PM: {avg_3pm}")
 
     return jsonify({
         "team_a": {
