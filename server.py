@@ -545,37 +545,27 @@ def fetch_team_averages(team_id):
     }
 
 
-@app.route("/nba/get-teams-espn", methods=["POST"])
-def get_nba_teams_espn():
+@app.route("/nba/get-team-espn", methods=["POST"])
+def get_nba_team_espn():
     data = request.get_json()
 
-    if not data or "team1" not in data or "team2" not in data:
-        return jsonify({"error": "Missing team1 or team2 in request body (expected team IDs)"}), 400
+    if not data or "team_id" not in data:
+        return jsonify({"error": "Missing team_id in request body"}), 400
 
-    team1_id = data["team1"]
-    team2_id = data["team2"]
+    team_id = data["team_id"]
 
-    # הרצת השליפה לשתי הקבוצות במקביל כדי לחסוך זמן תגובה
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        future1 = executor.submit(fetch_team_averages, team1_id)
-        future2 = executor.submit(fetch_team_averages, team2_id)
+    try:
+        # שימוש בפונקציית העזר הקיימת לשליפת הממוצעים לקבוצה בודדת
+        res = fetch_team_averages(team_id)
 
-        res1 = future1.result()
-        res2 = future2.result()
+        if not res:
+            return jsonify({"error": "Team not found or has no recent games"}), 404
 
-    if not res1 or not res2:
-        return jsonify({"error": "One or both teams not found or have no recent games"}), 404
+        return jsonify(res)
 
-    avg_pts = (res1["PTS"] + res2["PTS"]) / 2
-    avg_3pm = (res1["FG3M"] + res2["FG3M"]) / 2
-
-    return jsonify({
-        "team_a": res1,
-        "team_b": res2,
-        "avg_pts": round(avg_pts, 2),
-        "avg_3pm": round(avg_3pm, 2)
-    })
-
+    except Exception as e:
+        app.logger.exception(e)
+        return jsonify({"error": str(e)}), 500
 @app.route("/nba/calc-under", methods=["POST"])
 def calc_nba_under():
     print("Calculating NBA Under/Over based on the request data...")
