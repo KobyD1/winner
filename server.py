@@ -1,6 +1,8 @@
 from flask import Flask, jsonify
 from flask import request
 from pyairtable import Api
+from nba_api.stats.endpoints import LeagueDashTeamStats
+
 import os
 
 import requests
@@ -440,6 +442,84 @@ def all_stats(league_code):
         "competition": league_code,
         "teams": teams
     })
+# =======================================
+# NBA API
+# ======================================
+
+@app.route("/nba/calc_under", methods=["POST"])
+def calc_nba_under():
+
+    data = request.get_json()
+
+    teams = data["teams"]
+
+    bonus = 0
+    offset = 8
+    favorite = 0
+
+    avg_teams = (
+        teams["team_a"]["PTS"] +
+        teams["team_b"]["PTS"]
+    ) / 2
+
+    rate = data["rate"]
+
+    if rate - avg_teams > offset:
+        favorite = 2  # Under
+
+    elif avg_teams - rate > offset:
+        favorite = 1  # Over
+
+    if abs(rate - avg_teams) > 15:
+        bonus = 20
+
+    return jsonify({
+        "favorite": favorite,
+        "score": bonus,
+        "game": data["game"],
+        "rate": rate,
+        "avg_teams": round(avg_teams, 2),
+        "difference": round(
+            abs(rate - avg_teams),
+            2
+        )
+    })
+@app.route("/nba/compare-teams", methods=["POST"])
+def compare_nba_teams():
+
+    data = request.get_json()
+
+    team1 = data["team1"]
+    team2 = data["team2"]
+    season = data.get("season", "2025-26")
+
+    df = LeagueDashTeamStats(
+        per_mode_detailed="PerGame",
+        season=season
+    ).get_data_frames()[0]
+
+    row1 = df[df["TEAM_NAME"] == team1].iloc[0]
+    row2 = df[df["TEAM_NAME"] == team2].iloc[0]
+
+    avg_pts = (row1["PTS"] + row2["PTS"]) / 2
+    avg_3pm = (row1["FG3M"] + row2["FG3M"]) / 2
+
+    return jsonify({
+        "team_a": {
+            "name": team1,
+            "PTS": float(row1["PTS"]),
+            "FG3M": float(row1["FG3M"])
+        },
+        "team_b": {
+            "name": team2,
+            "PTS": float(row2["PTS"]),
+            "FG3M": float(row2["FG3M"])
+        },
+        "avg_pts": round(avg_pts, 2),
+        "avg_3pm": round(avg_3pm, 2)
+    })
+
+
 
 @app.route("/config")
 def config():
