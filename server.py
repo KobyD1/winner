@@ -491,7 +491,6 @@ def calc_nba_under():
 @app.route("/nba/get-teams", methods=["POST"])
 def get_nba_teams():
     print("Getting  NBA teams data  based on the request data...")
-    app.logger.info("NBA TEAMS CALLED")
     data = request.get_json()
 
     team1 = data["team1"]
@@ -500,6 +499,7 @@ def get_nba_teams():
     app.logger.info(f"Fetching NBA teams data for {team1} and {team2} for season {season}")
 
     df = LeagueDashTeamStats(per_mode_detailed="PerGame",season=season).get_data_frames()[0]
+    app.logger.info(f"data={df}")
 
     row1 = df[df["TEAM_NAME"] == team1].iloc[0]
     row2 = df[df["TEAM_NAME"] == team2].iloc[0]
