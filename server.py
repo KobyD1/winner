@@ -492,6 +492,18 @@ import pandas as pd
 import requests
 from flask import jsonify, request
 
+@app.route("/nba/team-stats")
+def nba_team_stats():
+
+    tables = pd.read_html(
+        "https://www.espn.com/nba/stats/team"
+    )
+
+    return jsonify({
+        "columns": tables[0].columns.tolist(),
+        "rows": len(tables[0])
+    })
+
 @app.route("/nba/get-teams-espn", methods=["POST"])
 def get_nba_teams_espn():
 
