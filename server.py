@@ -487,7 +487,7 @@ def calc_nba_under():
 @app.route("/nba/get-teams", methods=["POST"])
 def get_nba_teams():
     print("Getting  NBA teams data  based on the request data...")
-
+    app.logger.info("NBA TEAMS CALLED")
     data = request.get_json()
 
     team1 = data["team1"]
