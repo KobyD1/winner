@@ -518,7 +518,7 @@ def sort_results():
     req_data = request.get_json()
     results_not_sorted =req_data["results_not_sorted"]
     results_sorted = sorted(results_not_sorted, key=lambda x: x["score"], reverse=True)
-    headers =  ["המלצה", "Game", "Score", "Bet", " Under/Over Rate","Teams Rate","Home Points", "Home - Game Points","Away Points", "Away - Game Points"]
+    headers =  ["Favorite", "Game", "Score", "Bet", " Under/Over Rate","Teams Rate","Home Points", "Home - Game Points","Away Points", "Away - Game Points","המלצה"]
     rows = [
         [
             str(item["favorite"]),
