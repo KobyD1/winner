@@ -453,16 +453,18 @@ def calc_under():
 
     logger.info(f"game -  {game},home : {team1}, away: {team2}")
     logger.info(f"Home team - PTS: {row1['PTS']},3PM: {row1['FG3M']}, PLUS_MINUS: {row1['PLUS_MINUS']}")
-    logger.info(f"Hway team - PTS: {row2['PTS']},3PM: {row2['FG3M']}, PLUS_MINUS: {row2['PLUS_MINUS']}")
+    logger.info(f"Away team - PTS: {row2['PTS']},3PM: {row2['FG3M']}, PLUS_MINUS: {row2['PLUS_MINUS']}")
 
 
-    if not row1 or not row2:
-        return jsonify({"error": "one or more team not found"}), 404
-    if not row1["PTS"] or not row2["PTS"] or not row1["PLUS_MINUS"] or not row2["PLUS_MINUS"]:
-        return jsonify({"error": "one or more team data not found"}), 404
+    # if not row1 or not row2:
+    #     return jsonify({"error": "one or more team not found"}), 404
+    # if not row1["PTS"] or not row2["PTS"] or not row1["PLUS_MINUS"] or not row2["PLUS_MINUS"]:
+    #     return jsonify({"error": "one or more team data not found"}), 404
 
     avg_pts_team1 = (row1["PTS"] - row1["PLUS_MINUS"])
     avg_pts_team2 = (row2["PTS"] - row2["PLUS_MINUS"])
+    logger.info(f" avg_pts_team1: {avg_pts_team1},avg_pts_team2: {avg_pts_team2}")
+
     avg_pts = (avg_pts_team1 + avg_pts_team2) / 2
     avg_3pm = (row1["FG3M"] + row2["FG3M"])
     score = 0
