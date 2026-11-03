@@ -446,6 +446,7 @@ def calc_under():
     team1 = req_data.get("team1")
     team2 = req_data.get("team2")
     favorite = req_data.get("favorite")
+    offset = req_data.get("offset",8)
 
     data = req_data.get("data", [])
     logger.debug(f"rate =  {rate}   ")
@@ -475,11 +476,11 @@ def calc_under():
     score = 0
     # favorite = 0
 
-    if avg_pts - rate > 8:
+    if avg_pts - rate > offset:
         favorite = 1
         score = avg_pts - rate
 
-    if rate - avg_pts > 8:
+    if rate - avg_pts > offset:
         favorite = 2
         score = rate - avg_pts
 
