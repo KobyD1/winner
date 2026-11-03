@@ -14,7 +14,6 @@ API_KEY = os.getenv("FOOTBALL_API_KEY")
 
 BASE_URL = "https://api.football-data.org/v4"
 
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 def get_headers():
