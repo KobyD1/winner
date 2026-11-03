@@ -444,12 +444,15 @@ def calc_under():
     team1 = req_data.get("team1")
     team2 = req_data.get("team2")
     data = req_data.get("data", [])
+    logger.debug(f"rate =  {rate}   ")
 
     row1 = next((item for item in data if item.get("TEAM_NAME") == team1), None)
     row2 = next((item for item in data if item.get("TEAM_NAME") == team2), None)
 
     if not row1 or not row2:
         return jsonify({"error": "one or more team not found"}), 404
+    if not row1["PTS"] or not row2["PTS"] or not row1["PLUS_MINUS"] or not row2["PLUS_MINUS"]:
+        return jsonify({"error": "one or more team data not found"}), 404
 
     avg_pts_team1 = (row1["PTS"] - row1["PLUS_MINUS"])
     avg_pts_team2 = (row2["PTS"] - row2["PLUS_MINUS"])
@@ -473,16 +476,16 @@ def calc_under():
     if abs(row1["PTS"] - row2["PTS"]) < 10:
         score = 10 +abs(row1["PTS"] - row2["PTS"])
 
-    logger.info(f"Comparing {team1} and {team2}  ")
-    logger.info(f"\n{team1}")
-    logger.info(f"PTS: {row1['PTS']},3PM: {row1['FG3M']}, PLUS_MINUS: {row1['PLUS_MINUS']}")
+    logger.debug(f"Comparing {team1} and {team2}  ")
+    logger.debug(f"\n{team1}")
+    logger.debug(f"PTS: {row1['PTS']},3PM: {row1['FG3M']}, PLUS_MINUS: {row1['PLUS_MINUS']}")
 
-    logger.info(f"\n{team2}")
-    logger.info(f"PTS: {row2['PTS']},3PM: {row2['FG3M']}, PLUS_MINUS: {row2['PLUS_MINUS']}")
+    logger.debug(f"\n{team2}")
+    logger.debug(f"PTS: {row2['PTS']},3PM: {row2['FG3M']}, PLUS_MINUS: {row2['PLUS_MINUS']}")
 
-    logger.info(f"Avg. combined")
-    logger.info(f"PTS: {avg_pts:.1f},3PM: {avg_3pm:.1f}")
-    logger.info(f"Favorite: {favorite}, Game: {game}, Rate: {rate}, Score: {score}")
+    logger.debug(f"Avg. combined")
+    logger.debug(f"PTS: {avg_pts:.1f},3PM: {avg_3pm:.1f}")
+    logger.debug(f"Favorite: {favorite}, Game: {game}, Rate: {rate}, Score: {score}")
 
     return jsonify({
         "team_a": {
