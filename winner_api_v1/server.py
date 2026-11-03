@@ -518,28 +518,8 @@ def sort_results():
     req_data = request.get_json()
     results_not_sorted =req_data["results_not_sorted"]
     results_sorted = sorted(results_not_sorted, key=lambda x: x["score"], reverse=True)
-    headers = [
-        "נקודות חוץ - משחק",
-        "נקודות חוץ",
 
-        "נקודות בית - משחק",
-
-        "נקודות בית",
-
-        "דירוג קבוצות",
-
-        "יחס אנדר/אובר",
-
-        "הימור",
-
-        "תוצאה",
-
-        "משחק",
-
-        "מועדף",
-
-    ]
-    # headers =  ["Favor.", "Game", "Score", "Bet", " Under/Over Rate","Teams Rate","Home Points", "Home - Game Points","Away Points", "Away - Game Points"]
+    headers =  ["Favor.", "Game", "Score", "Bet", " Under/Over Rate","Teams Rate","Home Points", "Home - Game Points","Away Points", "Away - Game Points"]
     rows = [
         [
             str(item["favorite"]),
