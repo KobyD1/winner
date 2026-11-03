@@ -475,11 +475,11 @@ def calc_under():
     score = 0
     # favorite = 0
 
-    if avg_pts - rate > 9:
+    if avg_pts - rate > 8:
         favorite = 1
         score = avg_pts - rate
 
-    if rate - avg_pts > 9:
+    if rate - avg_pts > 8:
         favorite = 2
         score = rate - avg_pts
 
