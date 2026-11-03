@@ -521,7 +521,6 @@ def sort_results():
     headers =  [ "Game", "Score", "Bet", " Under/Over Rate","Teams Rate","Home Points", "Home - Game Points","Away Points", "Away - Game Points","המלצה"]
     rows = [
         [
-            str(item["favorite"]),
             str(item["game"]),
             f"{item['score']:.2f}",
             str(item["bet"]),
@@ -532,6 +531,7 @@ def sort_results():
 
             str(item["team_b"].get("PTS", 0)),
             str(item["team_b"].get("PTS_GAME", 0)),
+            str(item["favorite"]),
 
         ]
         for item in results_sorted
