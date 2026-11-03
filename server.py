@@ -450,7 +450,7 @@ def calc_under():
     row2 = next((item for item in data if item.get("TEAM_NAME") == team2), None)
 
     if not row1 or not row2:
-        return jsonify({"error": "אחת או יותר מהקבוצות לא נמצאו ברשימה שנשלחה"}), 404
+        return jsonify({"error": "one or more team not found"}), 404
 
     avg_pts = (row1["PTS"] + row2["PTS"])
     avg_3pm = (row1["FG3M"] + row2["FG3M"])
@@ -465,19 +465,18 @@ def calc_under():
 
     if abs(avg_pts - rate) > 15:
         score = 20
+    if abs(row1["PTS"] - row2["PTS"]) < 10:
+        score = 10
 
     logger.info(f"Comparing {team1} and {team2} for the {season} season:")
     logger.info(f"\n{team1}")
-    logger.info(f"PTS: {row1['PTS']:.1f}")
-    logger.info(f"3PM: {row1['FG3M']:.1f}")
+    logger.info(f"PTS: {row1['PTS']:.1f},3PM: {row1['FG3M']:.1f}")
 
     logger.info(f"\n{team2}")
-    logger.info(f"PTS: {row2['PTS']:.1f}")
-    logger.info(f"3PM: {row2['FG3M']:.1f}")
+    logger.info(f"PTS: {row2['PTS']:.1f},3PM: {row2['FG3M']:.1f}")
 
     logger.info(f"Avg. combined")
-    logger.info(f"PTS: {avg_pts:.1f}")
-    logger.info(f"3PM: {avg_3pm:.1f}")
+    logger.info(f"PTS: {avg_pts:.1f},3PM: {avg_3pm:.1f}")
     logger.info(f"Favorite: {favorite}, Game: {game}, Rate: {rate}, Score: {score}")
 
     return jsonify({
@@ -500,7 +499,35 @@ def calc_under():
         "score": score
 
     }), 200
+@app.route("/nba/sort_results", methods=["POST"])
+def sort_results():
+    req_data = request.get_json()
+    results_not_sorted =req_data["results_not_sorted"]
+    results_sorted = sorted(results_not_sorted, key=lambda x: x["score"], reverse=True)
+    headers =  ["Favorite", "Game", "Score", "Bet", " Under/Over Rate", "Home Avg.", "Away Avg."]
+    rows = [
+        [
+            str(item["favorite"]),
+            str(item["game"]),
+            f"{item['score']:.2f}",
+            str(item["bet"]),
+            str(item["rate"]),
+            str(item["team_a"].get("PTS", 0)),
+            str(item["team_b"].get("PTS", 0))
 
+        ]
+        for item in results_sorted
+    ]
+
+
+    return jsonify({
+            "results_sorted": results_sorted,
+            "headers": headers,
+            "rows": rows,
+        }), 200
+# =======================================
+# NBA API - End
+# ======================================
 
 @app.route("/config")
 def config():
