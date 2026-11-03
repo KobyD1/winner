@@ -451,8 +451,8 @@ def calc_under():
     if not row1 or not row2:
         return jsonify({"error": "one or more team not found"}), 404
 
-    avg_pts_team1 = (row1["PTS"] + row1["OPP_PTS"])
-    avg_pts_team2 = (row2["PTS"] + row2["OPP_PTS"])
+    avg_pts_team1 = (row1["PTS"] + row1["PLUS_MINUS"])
+    avg_pts_team2 = (row2["PTS"] + row2["PLUS_MINUS"])
     avg_pts = (avg_pts_team1 + avg_pts_team2) / 2
     avg_3pm = (row1["FG3M"] + row2["FG3M"])
     score = 0
