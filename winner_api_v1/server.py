@@ -519,7 +519,7 @@ def calc_under():
         "favorite": favorite,
         "game": game,
         "rate": rate,
-        "score": score
+        "score": round(float(score), 2),
 
     }), 200
 @app.route("/nba/analyze", methods=["POST"])
@@ -527,7 +527,7 @@ def sort_results():
     req_data = request.get_json()
     results_not_sorted =req_data["results_not_sorted"]
     results_sorted = sorted(results_not_sorted, key=lambda x: x["score"], reverse=True)
-    headers =  ["Favorite", "Game", "Score", "Bet", " Under/Over Rate", "Home Avg.", "Away Avg."]
+    headers =  ["Favor.", "Game", "Score", "Bet", " Under/Over Rate","Home Points", "Home Game Points","Away Points", "Away Game Points"]
     rows = [
         [
             str(item["favorite"]),
@@ -536,7 +536,10 @@ def sort_results():
             str(item["bet"]),
             str(item["rate"]),
             str(item["team_a"].get("PTS", 0)),
-            str(item["team_b"].get("PTS", 0))
+            str(item["team_a"].get("PTS_GAME", 0)),
+
+            str(item["team_b"].get("PTS", 0)),
+            str(item["team_b"].get("PTS_GAME", 0)),
 
         ]
         for item in results_sorted
