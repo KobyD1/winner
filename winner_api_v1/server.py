@@ -451,8 +451,8 @@ def calc_under():
     if not row1 or not row2:
         return jsonify({"error": "one or more team not found"}), 404
 
-    avg_pts_team1 = (row1["PTS"] + row1["PLUS_MINUS"])
-    avg_pts_team2 = (row2["PTS"] + row2["PLUS_MINUS"])
+    avg_pts_team1 = (row1["PTS"] - row1["PLUS_MINUS"])
+    avg_pts_team2 = (row2["PTS"] - row2["PLUS_MINUS"])
     avg_pts = (avg_pts_team1 + avg_pts_team2) / 2
     avg_3pm = (row1["FG3M"] + row2["FG3M"])
     score = 0
@@ -475,10 +475,10 @@ def calc_under():
 
     logger.info(f"Comparing {team1} and {team2}  ")
     logger.info(f"\n{team1}")
-    logger.info(f"PTS: {row1['PTS']:.1f},3PM: {row1['FG3M']:.1f}")
+    logger.info(f"PTS: {row1['PTS']},3PM: {row1['FG3M']}, PLUS_MINUS: {row1['PLUS_MINUS']}")
 
     logger.info(f"\n{team2}")
-    logger.info(f"PTS: {row2['PTS']:.1f},3PM: {row2['FG3M']:.1f}")
+    logger.info(f"PTS: {row2['PTS']},3PM: {row2['FG3M']}, PLUS_MINUS: {row2['PLUS_MINUS']}")
 
     logger.info(f"Avg. combined")
     logger.info(f"PTS: {avg_pts:.1f},3PM: {avg_3pm:.1f}")
