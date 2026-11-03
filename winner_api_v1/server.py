@@ -449,7 +449,6 @@ def calc_under():
     offset = req_data.get("offset",8)
 
     data = req_data.get("data", [])
-    logger.debug(f"rate =  {rate}   ")
 
     row1 = next((item for item in data if item.get("TEAM_NAME") == team1), None)
     row2 = next((item for item in data if item.get("TEAM_NAME") == team2), None)
@@ -468,13 +467,11 @@ def calc_under():
     avg_pts_team2_all = avg_pts_team2_other + avg_pts_team2
     logger.info(f" avg_pts_team1_all: {avg_pts_team1_all},avg_pts_team2_all: {avg_pts_team2_all}")
     avg_pts = (avg_pts_team1_all +avg_pts_team2_all) / 2
-    logger.info(f" avg_pts: {avg_pts}")
-    logger.info(f" rate: {rate}")
+    logger.info(f" avg_pts: {avg_pts},rate: {rate}")
 
 
     avg_3pm = (row1["FG3M"] + row2["FG3M"])
     score = 0
-    # favorite = 0
 
     if avg_pts - rate > offset:
         favorite = 1
@@ -521,7 +518,7 @@ def sort_results():
     req_data = request.get_json()
     results_not_sorted =req_data["results_not_sorted"]
     results_sorted = sorted(results_not_sorted, key=lambda x: x["score"], reverse=True)
-    headers =  ["Favor.", "Game", "Score", "Bet", " Under/Over Rate","Teams Rate","Home Points", "Home - Game Points","Away Points", "Away - Game Points"]
+    headers =  ["המלצה", "Game", "Score", "Bet", " Under/Over Rate","Teams Rate","Home Points", "Home - Game Points","Away Points", "Away - Game Points"]
     rows = [
         [
             str(item["favorite"]),
