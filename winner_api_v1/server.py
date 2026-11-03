@@ -465,20 +465,21 @@ def calc_under():
     avg_pts_team2 = (row2["PTS"] - row2["PLUS_MINUS"])
     logger.info(f" avg_pts_team1: {avg_pts_team1},avg_pts_team2: {avg_pts_team2}")
 
-    avg_pts = (avg_pts_team1 + avg_pts_team2) / 2
+    avg_pts = avg_pts_team1 + avg_pts_team2
     avg_3pm = (row1["FG3M"] + row2["FG3M"])
     score = 0
+    favorite = 0
+    logger.info(f"avg points :{avg_pts} ,avg_pts_team1: {avg_pts_team1},avg_pts_team2: {avg_pts_team2}")
 
-    if avg_pts - rate > 8:
+    if avg_pts - rate > 9:
         favorite = 1
         score = avg_pts - rate
 
-    elif rate - avg_pts > 8:
+    if rate - avg_pts > 9:
         favorite = 2
         score = rate - avg_pts
 
-    else:
-        favorite = 0
+
 
     if abs(avg_pts - rate) > 15:
         score = 20
