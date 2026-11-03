@@ -455,21 +455,20 @@ def calc_under():
     logger.info(f"Home team - PTS: {row1['PTS']},3PM: {row1['FG3M']}, PLUS_MINUS: {row1['PLUS_MINUS']}")
     logger.info(f"Away team - PTS: {row2['PTS']},3PM: {row2['FG3M']}, PLUS_MINUS: {row2['PLUS_MINUS']}")
 
+    avg_pts_team1 = row1["PTS"]
+    avg_pts_team2 = row2["PTS"]
 
-    # if not row1 or not row2:
-    #     return jsonify({"error": "one or more team not found"}), 404
-    # if not row1["PTS"] or not row2["PTS"] or not row1["PLUS_MINUS"] or not row2["PLUS_MINUS"]:
-    #     return jsonify({"error": "one or more team data not found"}), 404
+    avg_pts_team1_other = (avg_pts_team1- row1["PLUS_MINUS"])
+    avg_pts_team2_other = (avg_pts_team2 - row2["PLUS_MINUS"])
 
-    avg_pts_team1 = (row1["PTS"] - row1["PLUS_MINUS"])
-    avg_pts_team2 = (row2["PTS"] - row2["PLUS_MINUS"])
+    avg_pts_team1_all = avg_pts_team1_other + avg_pts_team1
+    avg_pts_team2_all = avg_pts_team2_other + avg_pts_team2
     logger.info(f" avg_pts_team1: {avg_pts_team1},avg_pts_team2: {avg_pts_team2}")
+    avg_pts = (avg_pts_team1_other + avg_pts_team1) + (avg_pts_team2_other + avg_pts_team2) / 2
 
-    avg_pts = avg_pts_team1 + avg_pts_team2
     avg_3pm = (row1["FG3M"] + row2["FG3M"])
     score = 0
     favorite = 0
-    logger.info(f"avg points :{avg_pts} ,avg_pts_team1: {avg_pts_team1},avg_pts_team2: {avg_pts_team2}")
 
     if avg_pts - rate > 9:
         favorite = 1
@@ -483,8 +482,13 @@ def calc_under():
 
     if abs(avg_pts - rate) > 15:
         score = 20
+
     if abs(row1["PTS"] - row2["PTS"]) < 10:
         score = 10 +abs(row1["PTS"] - row2["PTS"])
+
+    if abs(avg_pts_team1_all-avg_pts_team2_all) < 10:
+        score = 10 + abs(avg_pts_team1_all-avg_pts_team2_all)
+
 
     logger.debug(f"Comparing {team1} and {team2}  ")
     logger.debug(f"\n{team1}")
@@ -501,11 +505,13 @@ def calc_under():
         "team_a": {
             "name": team1,
             "PTS": round(float(avg_pts_team1), 2),
+            "PTS_GAME": round(float(avg_pts_team1_all), 2),
             "FG3M": float(row1["FG3M"])
         },
         "team_b": {
             "name": team2,
             "PTS": round(float(avg_pts_team2), 2),
+            "PTS_GAME": round(float(avg_pts_team2_all), 2),
             "FG3M": float(row2["FG3M"])
         },
         "avg_pts": round(float(avg_pts), 2),
