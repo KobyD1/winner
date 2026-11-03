@@ -458,15 +458,19 @@ def calc_under():
 
     if avg_pts - rate > 8:
         favorite = 1
+        score = avg_pts - rate
+
     elif rate - avg_pts > 8:
         favorite = 2
+        score = rate - avg_pts
+
     else:
         favorite = 0
 
     if abs(avg_pts - rate) > 15:
         score = 20
     if abs(row1["PTS"] - row2["PTS"]) < 10:
-        score = 10
+        score = 10 +abs(row1["PTS"] - row2["PTS"])
 
     logger.info(f"Comparing {team1} and {team2} for the {season} season:")
     logger.info(f"\n{team1}")
