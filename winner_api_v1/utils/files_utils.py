@@ -2,10 +2,11 @@ import datetime
 import sys
 from pathlib import Path
 
+from winner_api_v1.globals import EXCEL_PREFIX
+
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(ROOT_DIR))
 
-from winner_api_v1.globals import EXCEL_PREFIX
 
 
 import unicodedata
@@ -42,7 +43,9 @@ class FilesUtils:
         result_b = team_b_data.iloc[0].to_dict()
         teams_data_excel["team_a"] = result_a["Team"].strip()
         teams_data_excel["team_b"] = result_b["Team"].strip()
-        teams_data_excel["League"] = result_a["League"].strip()
+        if pd.notna(result_a["League"]):
+            teams_data_excel["League"] = result_a["League"].strip()
+
         return teams_data_excel
 
 
@@ -152,23 +155,13 @@ class FilesUtils:
                 print(build_row(row))
 
             print(build_separator("└", "─", "┴", "┘"))
-
-    def print_results_basketball(self, results_sorted):
+    def print_results_by_row(self ,data, title ="Summery Results"):
+        results_sorted = data["results_sorted"]
+        rows = data["rows"]
+        headers = data["headers"]
+        print(f"\033[1m{title}\033[0m")
         if results_sorted:
-            headers = ["Favorite", "Game", "Plan", "Score", "Bet"]
 
-            rows = [
-                [
-                    str(item["favorite"]),
-                    str(item["game"]),
-                    str(item["plan"]),
-                    f"{item['score']:.2f}",
-                    str(item["bet"]),
-                ]
-                for item in results_sorted
-            ]
-
-            # calc. width of Col.
             col_widths = []
             for col in range(len(headers)):
                 max_len = max(
@@ -200,7 +193,6 @@ class FilesUtils:
                 print(build_row(row))
 
             print(build_separator("└", "─", "┴", "┘"))
-
 
     def save_output(self, items, path, prefix, file_type="txt"):
 

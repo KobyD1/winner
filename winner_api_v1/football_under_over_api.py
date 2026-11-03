@@ -1,5 +1,5 @@
 from winner_api_v1.globals import DAYS, LEAGUE
-from winner_api_v1.utils.atable_api import ATableApi
+from winner_api_v1.utils.atable_api import AirTableApi
 from winner_api_v1.utils.render_api import RenderApi
 from winner_api_v1.utils.files_utils import FilesUtils
 from winner_api_v1.utils.football_data_api import FootballDataApi
@@ -13,7 +13,7 @@ results_not_sorted =[]
 render_api = RenderApi()
 league_code=render_api.get_league_code(LEAGUE)
 config = render_api.get_config()
-is_valid = ATableApi(config).verify_or_register_license()
+is_valid = AirTableApi(config).verify_or_register_license()
 table_data, is_found =playwright_main.set_main_page(DAYS, 2, config,LEAGUE)
 matches, standings = render_api.get_all_football_league_data(league_code)
 

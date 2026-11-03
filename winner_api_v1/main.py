@@ -1,4 +1,31 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+manager_app.py - אפליקציית ניהול להרצת הסקריפטים בתיקייה והצגת לוגים חיים.
 
+שימוש:
+    python manager_app.py                # מנהל את התיקייה שבה נמצא הקובץ
+    python manager_app.py C:\\path\\dir   # מנהל תיקייה אחרת
+
+תכונות:
+  * סריקה אוטומטית של קבצי .py / .bat / .cmd (+ req*.txt להתקנת חבילות)
+  * זיהוי אוטומטי של אפליקציות Streamlit (אפשר לדרוס ידנית)
+  * הרצה של כמה סקריפטים במקביל, לוג נפרד לכל אחד
+  * טבלת Summary שהסקריפט מדפיס מזוהה ומוצגת בשדה נפרד מהלוג
+  * צבע לכל כפתור ולכל רקע (כפתור "🎨 צבעים"), נשמר בין הרצות
+  * תיבת "ימים" נפתחת (dropdown) שכותבת מיד DAYS = <ערך> לתוך globals.py
+  * עצירה של כל עץ התהליכים (כולל תהליכי-בן של קבצי .bat)
+
+הגדרות מתקדמות בקובץ .manager_config.json (אופציונלי):
+  "summary_marker" - ביטוי רגולרי שמסמן תחילת טבלת סיכום (ברירת מחדל: summary / summery / סיכום)
+  "names"          - שמות תצוגה לקבצים,  {"file.py": "השם שלי"}
+  "visible"        - אילו קבצים מוצגים,  {"globals.py": false}
+  "interpreter"    - מפרש Python אחר להרצת הסקריפטים (ברירת מחדל: המפרש שמריץ את המנג'ר)
+  "days_var"       - שם המשתנה שנכתב ב-globals.py (ברירת מחדל: "DAYS")
+  "days_options"   - רשימת הערכים בתיבת "ימים" (ברירת מחדל: 1,2,3,5,7,10,14,21,30)
+  "error_marker"   - regex שקובע מתי נפתח באנר השגיאה (ברירת מחדל: המילה המדויקת ERROR,
+                     רגישה לאותיות רישיות - Traceback/Exception רגיל לא מפעילים אותו)
+"""
 from __future__ import annotations
 
 import ast
@@ -27,15 +54,18 @@ BASE_DIR = (Path(sys.argv[1]).resolve() if len(sys.argv) > 1
             else Path(__file__).resolve().parent)
 CONFIG_FILE = BASE_DIR / ".manager_config.json"
 
-MAX_LOG_LINES = 20_000
+MAX_LOG_LINES = 20_000          # מקסימום שורות לוג שנשמרות לכל סקריפט
 MAX_SUMMARY_LINES = 2_000
-POLL_MS = 100
-MAX_ITEMS_PER_TICK = 2000
+POLL_MS = 100                   # תדירות ריענון הלוג
+MAX_ITEMS_PER_TICK = 2000       # מגבלת שורות לעיבוד בכל ריענון (שומר על UI זריז)
 
+# קבצי עזר שאינם נועדו להרצה ישירה - מוסתרים כברירת מחדל (לפי שם בסיס, בלי סיומת,
+# כך שזה עובד גם על globals.py וגם על globals.pyc אם מפיצים גרסה מקומפלת בלי מקור)
 HELPER_FILES = {"__init__", "globals", "uiutils", Path(__file__).stem.lower()}
 
+# ── תיבת "ימים" (days) שנכתבת ישירות ל-globals.py ──
 GLOBALS_FILE = BASE_DIR / "globals.py"
-DEFAULT_DAYS_VAR = "DAYS"
+DEFAULT_DAYS_VAR = "DAYS"                              # שם המשתנה שנכתב/נקרא ב-globals.py
 DEFAULT_DAYS_OPTIONS = ["0","1", "2", "3",]
 DEFAULT_LEAGUE_VAR = "LEAGUE"
 DEFAULT_LEAGUE_OPTIONS = ["Spain", "England-PLeague", "NBA"]
@@ -43,17 +73,18 @@ DEFAULT_LEAGUE_OPTIONS = ["Spain", "England-PLeague", "NBA"]
 ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 ERR_RE = re.compile(r"\b(error|exception|critical|fatal|failed)\b", re.I)
 WARN_RE = re.compile(r"\bwarn(ing)?\b", re.I)
-
+# הבאנר הקופץ נדלק רק על המילה המדויקת ERROR (רגיש לאותיות רישיות) - לא על
+# "error" קטן, לא כחלק ממילה אחרת (למשל TclError), ולא בגלל Traceback/Exception סתם.
 ERROR_WORD_RE = re.compile(r"\bERROR\b")
 URL_RE = re.compile(r"https?://(?:localhost|127\.0\.0\.1):\d+")
 STREAMLIT_RE = re.compile(r"^\s*(?:import|from)\s+streamlit\b", re.M)
 
 # זיהוי טבלת סיכום
-DEFAULT_SUMMARY_PATTERN = r"summ(?:a|e)ry|סיכום"
+DEFAULT_SUMMARY_PATTERN = r"summ(?:a|e)ry|סיכום"       # כולל את האיות "summery"
 BOX_CHARS = "│┃║┌┐└┘├┤┬┴┼╔╗╚╝╠╣╦╩╬─━═╭╮╯╰"
-SEP_RE = re.compile(r"^[\s\-=+_*~]{3,}$")
-COLS_RE = re.compile(r"\S {2,}\S|\S\t+\S")
-ROWS_RE = re.compile(r"^\[\d+ rows x \d+ columns\]$")
+SEP_RE = re.compile(r"^[\s\-=+_*~]{3,}$")               # שורת מפריד: ----- / =====
+COLS_RE = re.compile(r"\S {2,}\S|\S\t+\S")               # עמודות מופרדות ברווחים/טאבים
+ROWS_RE = re.compile(r"^\[\d+ rows x \d+ columns\]$")   # סוף DataFrame של pandas
 
 STATUS_TEXT = {"idle": "", "running": "● רץ", "done": "✔ הסתיים",
                "failed": "✖ נכשל", "stopped": "■ נעצר"}
@@ -63,6 +94,7 @@ STATUS_COLOR_DARK = {"idle": "#bdc1c6", "running": "#81c995", "done": "#bdc1c6",
                      "failed": "#f28b82", "stopped": "#fdd663"}
 KIND_LABEL = {"py": "Python", "streamlit": "Streamlit", "bat": "Batch", "pip": "Setup"}
 
+# צבעי ברירת מחדל (ניתנים לשינוי דרך "🎨 צבעים")
 DEFAULT_COLORS = {
     "bg": "#f0f0f0", "log_bg": "#1e1e1e", "summary_bg": "#252b33",
     "run": "#188038", "stop": "#c5221f", "restart": "#e37400",
@@ -100,10 +132,12 @@ def luminance(h: str) -> float:
 
 
 def contrast_fg(h: str) -> str:
+    """צבע טקסט קריא (שחור/לבן) מעל הרקע h."""
     return "#000000" if luminance(h) > 0.6 else "#ffffff"
 
 
 def shade(h: str, amount: float) -> str:
+    """amount<0 מכהה, amount>0 מבהיר."""
     r, g, b = _rgb(h)
     if amount < 0:
         f = 1 + amount
@@ -116,6 +150,7 @@ def blend(a: str, b: str, t: float) -> str:
 
 
 class ColorButton(tk.Button):
+    """כפתור עם צבע רקע מותאם (ttk לא תומך בזה באופן אחיד), טקסט בצבע קריא אוטומטית."""
 
     def __init__(self, master, key: str, text: str, command) -> None:
         super().__init__(master, text=text, command=command, relief="flat", bd=0,
@@ -147,6 +182,7 @@ class ColorButton(tk.Button):
 
 # ───────────────────────────── עזרים כלליים ─────────────────────────────
 def split_args(text: str) -> list[str]:
+    """פירוק שורת ארגומנטים (שומר על נתיבי Windows עם backslash)."""
     if not text.strip():
         return []
     parts = shlex.split(text, posix=not IS_WIN)
@@ -168,6 +204,7 @@ def fmt_elapsed(seconds: float) -> str:
 
 
 def looks_tabular(line: str) -> bool:
+    """האם השורה נראית כחלק מטבלה (pandas / tabulate / קווים / תווי ציור)."""
     s = line.strip()
     if not s:
         return False
@@ -179,6 +216,7 @@ def looks_tabular(line: str) -> bool:
 
 
 def kill_tree(proc: subprocess.Popen) -> None:
+    """עצירת התהליך וכל תהליכי-הבן שלו."""
     try:
         if IS_WIN:
             subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"],
@@ -204,7 +242,11 @@ def is_streamlit_file(path: Path) -> bool:
 
 
 def discover() -> list[tuple[str, Path, str, bool]]:
-
+    """
+    כל הקבצים שאפשר להריץ: [(name, path, base_kind, is_streamlit)].
+    קבצי .pyc (בייטקוד מקומפל, בלי קוד מקור גלוי) נחשבים כמו .py לצורך הרצה -
+    python מריץ אותם ישירות. אם לאותו שם קובץ יש גם .py וגם .pyc, מוצג רק ה-.py.
+    """
     items = []
     py_stems = {p.stem.lower() for p in BASE_DIR.iterdir()
                if p.is_file() and p.suffix.lower() == ".py"}
@@ -216,8 +258,8 @@ def discover() -> list[tuple[str, Path, str, bool]]:
             items.append((p.name, p, "py", is_streamlit_file(p)))
         elif ext == ".pyc":
             if p.stem.lower() in py_stems:
-                continue
-            items.append((p.name, p, "py", False))
+                continue                           # יש גם מקור .py - לא כופלים ברשימה
+            items.append((p.name, p, "py", False))  # בייטקוד בינארי - לא בודקים streamlit
         elif ext in (".bat", ".cmd"):
             items.append((p.name, p, "bat", False))
         elif ext == ".txt" and low.startswith("req"):
@@ -230,7 +272,10 @@ def _var_pattern(var_name: str) -> re.Pattern:
 
 
 def read_global_value(var_name: str) -> Optional[str]:
-
+    """
+    קורא את הערך הנוכחי של var_name מתוך globals.py, אם קיים, ומחזיר אותו כטקסט
+    להצגה (למשל DAYS = 7 -> "7", LEAGUE = "Spain" -> "Spain", בלי הגרשיים).
+    """
     try:
         text = GLOBALS_FILE.read_text(encoding="utf-8")
     except OSError:
@@ -246,7 +291,11 @@ def read_global_value(var_name: str) -> Optional[str]:
 
 
 def write_global_literal(var_name: str, literal: str) -> None:
-
+    """
+    כותב `VAR = literal` לתוך globals.py (literal הוא כבר קוד פייתון תקין, למשל
+    "7" למספר או "'Spain'" למחרוזת מצוטטת): מחליף את השורה אם המשתנה כבר קיים,
+    ואחרת מוסיף שורה חדשה בסוף הקובץ (יוצר את הקובץ אם הוא לא קיים).
+    """
     try:
         text = GLOBALS_FILE.read_text(encoding="utf-8")
     except OSError:
@@ -269,7 +318,7 @@ class Task:
     base_kind: str                       # py | bat | pip
     detected_streamlit: bool = False
     mode: str = "auto"                   # auto | python | streamlit  (רק ל-py)
-    alias: str = ""
+    alias: str = ""                      # שם תצוגה (ריק = שם הקובץ)
     proc: Optional[subprocess.Popen] = None
     status: str = "idle"                 # idle | running | done | failed | stopped
     exit_code: Optional[int] = None
@@ -280,11 +329,12 @@ class Task:
     restart_pending: bool = False
     in_traceback: bool = False
     log: deque = field(default_factory=lambda: deque(maxlen=MAX_LOG_LINES))
-    summary: list = field(default_factory=list)
-    sum_pending: list = field(default_factory=list)
+    # ── טבלת סיכום ──
+    summary: list = field(default_factory=list)       # מה שמוצג בשדה הסיכום
+    sum_pending: list = field(default_factory=list)   # בלוק שנאסף כרגע
     sum_active: bool = False
-    sum_body: int = 0
-    tab_run: list = field(default_factory=list)
+    sum_body: int = 0                                 # כמה שורות טבלה נאספו
+    tab_run: list = field(default_factory=list)       # רצף שורות טבלאיות אחרונות
     sum_dirty: bool = False
 
     @property
@@ -302,6 +352,7 @@ class Task:
         return self.alias or self.name
 
 
+# ───────────────────────────── האפליקציה ─────────────────────────────
 class ManagerApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()

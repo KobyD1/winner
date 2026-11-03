@@ -43,10 +43,6 @@ class RenderApi:
             print(f"Error fetching UI config: {response.status_code}")
             return None
 
-    def get_teams(self,league_code):
-        print("sending wake up get request to server  can take 30 sec.")
-
-        requests.get(f"{self.render_url}/{league_code}/teams")
 
 
     def get_all_football_league_data(self,league_code):
@@ -128,6 +124,33 @@ class RenderApi:
 
         print(f"Team data for {team_name}: {team_data}")
         return team_data
+
+    def get_nba_teams_data(self,teams_code,table_data,excel_data,season):
+
+        payload ={
+            "team1": excel_data["team_a"],
+            "team2": excel_data["team_b"],
+            "season": season,
+            "table_data": table_data,
+            "data": teams_code
+        }
+
+        response = requests.post(f"{self.render_url}/nba/calc-under", json=payload)
+        data = response.json()
+
+        return data
+
+    def analayze_nba_data(self,results_not_sorted):
+        payload = {
+            "results_not_sorted": results_not_sorted
+        }
+
+        response = requests.post(f"{self.render_url}/nba/analyze", json=payload)
+        data = response.json()
+
+        return data
+
+
 
 
     def check_license(self,hwid ):

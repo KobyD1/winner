@@ -443,7 +443,6 @@ def calc_under():
     rate = req_data["table_data"]["rate"]
     team1 = req_data.get("team1")
     team2 = req_data.get("team2")
-    season = req_data.get("season", "2025-26")
     data = req_data.get("data", [])
 
     row1 = next((item for item in data if item.get("TEAM_NAME") == team1), None)
@@ -452,7 +451,9 @@ def calc_under():
     if not row1 or not row2:
         return jsonify({"error": "one or more team not found"}), 404
 
-    avg_pts = (row1["PTS"] + row2["PTS"])
+    avg_pts_team1 = (row1["PTS"] + row1["OPP_PTS"])
+    avg_pts_team2 = (row2["PTS"] + row2["OPP_PTS"])
+    avg_pts = (avg_pts_team1 + avg_pts_team2) / 2
     avg_3pm = (row1["FG3M"] + row2["FG3M"])
     score = 0
 
@@ -472,7 +473,7 @@ def calc_under():
     if abs(row1["PTS"] - row2["PTS"]) < 10:
         score = 10 +abs(row1["PTS"] - row2["PTS"])
 
-    logger.info(f"Comparing {team1} and {team2}  in season: {season}")
+    logger.info(f"Comparing {team1} and {team2}  ")
     logger.info(f"\n{team1}")
     logger.info(f"PTS: {row1['PTS']:.1f},3PM: {row1['FG3M']:.1f}")
 
@@ -484,19 +485,18 @@ def calc_under():
     logger.info(f"Favorite: {favorite}, Game: {game}, Rate: {rate}, Score: {score}")
 
     return jsonify({
-        "season": season,
         "team_a": {
             "name": team1,
-            "PTS": float(row1["PTS"]),
+            "PTS": round(float(avg_pts_team1), 2),
             "FG3M": float(row1["FG3M"])
         },
         "team_b": {
             "name": team2,
-            "PTS": float(row2["PTS"]),
+            "PTS": round(float(avg_pts_team2), 2),
             "FG3M": float(row2["FG3M"])
         },
-        "avg_pts": round(float(avg_pts), 1),
-        "avg_3pm": round(float(avg_3pm), 1),
+        "avg_pts": round(float(avg_pts), 2),
+        "avg_3pm": round(float(avg_3pm), 2),
         "favorite": favorite,
         "game": game,
         "rate": rate,

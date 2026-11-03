@@ -26,15 +26,15 @@ class main_page:
         self.page.wait_for_timeout(1000)
 
     def set_table_league(self,league="wnba"):
-        is_found = True
+        is_found = False
         self.page.locator("[class*=liFilterTabs]").nth(4).click()
         self.close_all_tabs()
 
         self.page.get_by_role("checkbox", name="הצג הכל").click()
 
         match league:
-            case "wnba":
-                loc = self.page.locator("#checkbox_1663")
+            case "NBA":
+                loc= self.page.get_by_role("checkbox", name="NBA")
             case "Spain":
                 loc= self.page.get_by_role("checkbox", name="ספרד - לה ליגה")
 
@@ -53,12 +53,13 @@ class main_page:
             all_checkbox.click()
         if loc.is_visible():
             loc.click()
+            is_found=True
         self.close_all_tabs()
 
         if not loc.is_visible():
-            print (45 * "*")
+            print (50 * "*")
             print ("*****   ERROR : לא נמצאו ליגה פעילה בתכניה   *****")
-            print (45 * "*")
+            print (50 * "*")
             is_found = False
 
 
@@ -88,7 +89,7 @@ class main_page:
             row_data["game_in_program"] = row_data["game"].split(")")[1].strip()
         return row_data
 
-    def get_football_table_content(self):
+    def get_filterd_table_content(self):
 
         table_content = []
 
@@ -111,6 +112,11 @@ class main_page:
                     continue
 
                 case _ if any(term in teams for term in ["שערים", "טווחים"]):
+                    team_a, team_b, rate, description, team_with_added_points = self.teams_data_parser_uder_over(teams)
+                    row_data = self.row_data_parser(row, team_a, team_b, rate, description, team_with_added_points)
+                    row_data, bet_empty_counter = self.bet_parser(row, row_data)
+
+                case _ if any(term in teams for term in ["מעל/מתחת נקודות"]):
                     team_a, team_b, rate, description, team_with_added_points = self.teams_data_parser_uder_over(teams)
                     row_data = self.row_data_parser(row, team_a, team_b, rate, description, team_with_added_points)
                     row_data, bet_empty_counter = self.bet_parser(row, row_data)
