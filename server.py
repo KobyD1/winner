@@ -438,7 +438,7 @@ def calc_under():
     req_data = request.get_json()
 
     if not req_data:
-        return jsonify({"error": "לא התקבלו נתונים בגוף הבקשה"}), 400
+        return jsonify({"error": "data not found at request"}), 400
     game = req_data["table_data"]["game"]
     rate = req_data["table_data"]["rate"]
     team1 = req_data.get("team1")
@@ -472,7 +472,7 @@ def calc_under():
     if abs(row1["PTS"] - row2["PTS"]) < 10:
         score = 10 +abs(row1["PTS"] - row2["PTS"])
 
-    logger.info(f"Comparing {team1} and {team2} for the {season} season:")
+    logger.info(f"Comparing {team1} and {team2}  in season: {season}")
     logger.info(f"\n{team1}")
     logger.info(f"PTS: {row1['PTS']:.1f},3PM: {row1['FG3M']:.1f}")
 
