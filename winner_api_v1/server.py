@@ -436,6 +436,12 @@ def all_stats(league_code):
 @app.route("/nba/calc-under", methods=["POST"])
 def calc_under():
     req_data = request.get_json()
+    print("$$$$ Request received $$$$$", flush=True)
+    logger.debug("$$$$ Request received debug $$$$$")
+    logger.info("$$$$ Request received info $$$$$")
+    app.logger.info("Request received")
+
+
 
     if not req_data:
         return jsonify({"error": "data not found at request"}), 400
@@ -448,6 +454,8 @@ def calc_under():
 
     row1 = next((item for item in data if item.get("TEAM_NAME") == team1), None)
     row2 = next((item for item in data if item.get("TEAM_NAME") == team2), None)
+    logger.debug(f"PTS: {row1['PTS']},3PM: {row1['FG3M']}, PLUS_MINUS: {row1['PLUS_MINUS']}")
+    logger.info(f"PTS: {row1['PTS']},3PM: {row1['FG3M']}, PLUS_MINUS: {row1['PLUS_MINUS']}")
 
     if not row1 or not row2:
         return jsonify({"error": "one or more team not found"}), 404
