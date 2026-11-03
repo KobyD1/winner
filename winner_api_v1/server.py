@@ -519,16 +519,25 @@ def sort_results():
     results_not_sorted =req_data["results_not_sorted"]
     results_sorted = sorted(results_not_sorted, key=lambda x: x["score"], reverse=True)
     headers = [
-        "מועדף",
-        "משחק",
-        "תוצאה",
-        "הימור",
-        "יחס אנדר/אובר",
-        "דירוג קבוצות",
-        "נקודות בית",
-        "נקודות בית - משחק",
+        "נקודות חוץ - משחק",
         "נקודות חוץ",
-        "נקודות חוץ - משחק"
+
+        "נקודות בית - משחק",
+
+        "נקודות בית",
+
+        "דירוג קבוצות",
+
+        "יחס אנדר/אובר",
+
+        "הימור",
+
+        "תוצאה",
+
+        "משחק",
+
+        "מועדף",
+
     ]
     # headers =  ["Favor.", "Game", "Score", "Bet", " Under/Over Rate","Teams Rate","Home Points", "Home - Game Points","Away Points", "Away - Game Points"]
     rows = [
