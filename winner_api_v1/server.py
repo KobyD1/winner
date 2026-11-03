@@ -445,6 +445,8 @@ def calc_under():
     rate = req_data["table_data"]["rate"]
     team1 = req_data.get("team1")
     team2 = req_data.get("team2")
+    favorite = req_data.get("favorite")
+
     data = req_data.get("data", [])
     logger.debug(f"rate =  {rate}   ")
 
@@ -463,12 +465,15 @@ def calc_under():
 
     avg_pts_team1_all = avg_pts_team1_other + avg_pts_team1
     avg_pts_team2_all = avg_pts_team2_other + avg_pts_team2
-    logger.info(f" avg_pts_team1: {avg_pts_team1},avg_pts_team2: {avg_pts_team2}")
-    avg_pts = (avg_pts_team1_other + avg_pts_team1) + (avg_pts_team2_other + avg_pts_team2) / 2
+    logger.info(f" avg_pts_team1_all: {avg_pts_team1_all},avg_pts_team2_all: {avg_pts_team2_all}")
+    avg_pts = avg_pts_team1_all +avg_pts_team2_all / 2
+    logger.info(f" avg_pts: {avg_pts}")
+    logger.info(f" rate: {rate}")
+
 
     avg_3pm = (row1["FG3M"] + row2["FG3M"])
     score = 0
-    favorite = 0
+    # favorite = 0
 
     if avg_pts - rate > 9:
         favorite = 1
@@ -477,7 +482,6 @@ def calc_under():
     if rate - avg_pts > 9:
         favorite = 2
         score = rate - avg_pts
-
 
 
     if abs(avg_pts - rate) > 15:
@@ -489,17 +493,6 @@ def calc_under():
     if abs(avg_pts_team1_all-avg_pts_team2_all) < 10:
         score = 10 + abs(avg_pts_team1_all-avg_pts_team2_all)
 
-
-    logger.debug(f"Comparing {team1} and {team2}  ")
-    logger.debug(f"\n{team1}")
-    logger.debug(f"PTS: {row1['PTS']},3PM: {row1['FG3M']}, PLUS_MINUS: {row1['PLUS_MINUS']}")
-
-    logger.debug(f"\n{team2}")
-    logger.debug(f"PTS: {row2['PTS']},3PM: {row2['FG3M']}, PLUS_MINUS: {row2['PLUS_MINUS']}")
-
-    logger.debug(f"Avg. combined")
-    logger.debug(f"PTS: {avg_pts:.1f},3PM: {avg_3pm:.1f}")
-    logger.debug(f"Favorite: {favorite}, Game: {game}, Rate: {rate}, Score: {score}")
 
     return jsonify({
         "team_a": {
