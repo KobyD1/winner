@@ -499,7 +499,7 @@ def calc_under():
         "score": score
 
     }), 200
-@app.route("/nba/sort_results", methods=["POST"])
+@app.route("/nba/analyze", methods=["POST"])
 def sort_results():
     req_data = request.get_json()
     results_not_sorted =req_data["results_not_sorted"]
