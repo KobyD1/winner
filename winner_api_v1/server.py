@@ -49,7 +49,7 @@ def home():
 
 
 @app.route("/analyze", methods=["POST"])
-def sort_results():
+def sort_and_analyze_results():
     req_data = request.get_json()
     results_not_sorted =req_data["results_not_sorted"]
     results_sorted = sorted(results_not_sorted, key=lambda x: x["score"], reverse=True)
@@ -82,7 +82,7 @@ def sort_results():
 
 
 @app.route('/israel-corners/analyze', methods=['POST'])
-def analyze():
+def analyze_corners():
     data = request.get_json()
     table_data_converted=data.get("table_data_converted")
     corner_data = data.get("corner_data")
