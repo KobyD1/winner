@@ -51,7 +51,7 @@ def home():
 
 
 
-@app.route('israel-corners/translate-teams', methods=['POST'])
+@app.route('/israel-corners/translate-teams', methods=['POST'])
 def translate_teams():
     data = request.get_json()
     for item in data:
