@@ -115,17 +115,27 @@ def analyze():
         if abs(corner_a - corner_b) < 3:
             points += 15
 
-        results_not_sorted.append({
-            "Favorite": favorite,
-            "Game": item.get("game"),
-            "Points": points,
-            "Bet": item.get(f"bet{favorite}") if favorite else "",
-            "Rate": rate,
-            "Corner Home": corner_a,
-            "Corner Away": corner_b,
-            "Team A": item.get("team_a"),
-            "Team B": item.get("team_b")
-        })
+        result_data = {}
+
+        for i, (name, value) in enumerate({
+                                              "Favorite": favorite,
+                                              "Game": item.get("game"),
+                                              "Points": points,
+                                              "Bet": item.get(f"bet{favorite}") if favorite != 0 else "",
+                                              "Rate": rate,
+                                              "Corner Home": corner_a,
+                                              "Corner_Away": corner_b,
+                                              "team_a": item.get("team_a"),
+                                              "team_b": item.get("team_b"),
+
+                                              "corner_b": corner_b,
+                                              "points": points,
+                                          }.items(), start=1):
+            result_data[name] = {
+                "id": i,
+                "value": value
+            }
+        results_not_sorted.append(result_data)
 
     return jsonify(results_not_sorted)
 
