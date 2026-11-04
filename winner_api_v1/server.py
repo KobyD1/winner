@@ -83,15 +83,25 @@ def sort_and_analyze_results():
 def sort_and_prapare_to_print():
 
     results_not_sorted = request.get_json()
-    results_sorted = sorted(results_not_sorted, key=lambda x: x["score"], reverse=True)
-    for item in results_sorted:
-        result_list = [None] * len(results_sorted)
+    results_sorted = sorted(
+        results_not_sorted,
+        key=lambda x: x.get("Points", {}).get("value", 0),
+        reverse=True
+    )
+    headers = [k for k, v in sorted(results_sorted[0].items(), key=lambda x: x[1]["id"])]
+    rows = [
+        [
+            str(v["value"])
+            for _, v in sorted(item.items(), key=lambda x: x[1]["id"])
+        ]
+        for item in results_sorted
+    ]
 
-        for item in results_sorted.values():
-            result_list[item["id"] - 1] = item["value"]
-
-        print(result_list)
-
+    return jsonify({
+        "results_sorted": results_sorted,
+        "headers": headers,
+        "rows": rows,
+    }), 200
 
 @app.route('/israel-corners/analyze', methods=['POST'])
 def analyze_corners():
