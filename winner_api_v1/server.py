@@ -48,14 +48,92 @@ def home():
     })
 
 
+@app.route("/analyze", methods=["POST"])
+def sort_results():
+    req_data = request.get_json()
+    results_not_sorted =req_data["results_not_sorted"]
+    results_sorted = sorted(results_not_sorted, key=lambda x: x["score"], reverse=True)
+
+    headers =  ["Favor.", "Game", "Score", "Bet", " Under/Over Rate","Teams Rate","Home Points", "Home - Game Points","Away Points", "Away - Game Points"]
+    rows = [
+        [
+            str(item["favorite"]),
+            str(item["game"]),
+            f"{item['score']:.2f}",
+            str(item["bet"]),
+            str(item["rate"]),
+            str(item["avg_pts"]),
+            str(item["team_a"].get("PTS", 0)),
+            str(item["team_a"].get("PTS_GAME", 0)),
+
+            str(item["team_b"].get("PTS", 0)),
+            str(item["team_b"].get("PTS_GAME", 0)),
+
+        ]
+        for item in results_sorted
+    ]
 
 
+    return jsonify({
+            "results_sorted": results_sorted,
+            "headers": headers,
+            "rows": rows,
+        }), 200
+
+
+@app.route('israel-corners/analyze', methods=['POST'])
+def analyze():
+    data = request.get_json()
+    table_data_converted=data.get("table_data_converted")
+    corner_data = data.get("corner_data")
+    offset = data.get("offset", 2)
+
+    results_not_sorted = []
+
+    for item in table_data_converted["data"]:
+        if item["description"] != "Corners 2 Teams":
+            continue
+
+        corner_a = float(corner_data.get(item["team_a"], 0))
+        corner_b = float(corner_data.get(item["team_b"], 0))
+
+        total_corner = corner_a + corner_b
+        favorite = 0
+        rate = ""
+        points = 0
+
+        if total_corner < (9 - offset):
+            favorite = 1
+            rate = "under 9-11"
+        elif total_corner > (10 + offset):
+            favorite = 2
+            rate = "over 9-11"
+
+        if total_corner > 14 or total_corner < 5:
+            points += 25
+
+        if abs(corner_a - corner_b) < 3:
+            points += 15
+
+        results_not_sorted.append({
+            "Favorite": favorite,
+            "Game": item.get("game"),
+            "Points": points,
+            "Bet": item.get(f"bet{favorite}") if favorite else "",
+            "Rate": rate,
+            "Corner Home": corner_a,
+            "Corner Away": corner_b,
+            "Team A": item.get("team_a"),
+            "Team B": item.get("team_b")
+        })
+
+    return jsonify(results_not_sorted)
 
 @app.route('/israel-corners/translate-teams', methods=['POST'])
 def translate_teams():
     data = request.get_json()
 
-
+    logger.info(f"/israel-corners/translate-teams -Total get  {len(data)} games ")
 
     updated_data = []
     for item in data:
@@ -68,6 +146,8 @@ def translate_teams():
             new_item["team_b"] = HEBREW_TO_ENGLISH_TEAMS[new_item["team_b"]]
 
         updated_data.append(new_item)
+
+    logger.info(f"Total found : {len(updated_data)} games ")
 
     return jsonify({"status": "success", "data": updated_data}), 200
 
