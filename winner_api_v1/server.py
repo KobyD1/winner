@@ -54,8 +54,27 @@ def home():
 @app.route('/israel-corners/translate-teams', methods=['POST'])
 def translate_teams():
     data = request.get_json()
+
+
+
+    updated_data = []
     for item in data:
-        print (item)
+        # יוצרים העתק של המילון כדי לא לדרוס את הנתונים המקוריים בזיכרון
+        new_item = item.copy()
+
+        # בדיקה והחלפה בשדה team_a
+        if "team_a" in new_item and new_item["team_a"] in HEBREW_TO_ENGLISH_TEAMS:
+            new_item["team_a"] = HEBREW_TO_ENGLISH_TEAMS[new_item["team_a"]]
+
+        # בדיקה והחלפה בשדה team_b
+        if "team_b" in new_item and new_item["team_b"] in HEBREW_TO_ENGLISH_TEAMS:
+            new_item["team_b"] = HEBREW_TO_ENGLISH_TEAMS[new_item["team_b"]]
+
+        updated_data.append(new_item)
+
+    return jsonify({"status": "success", "data": updated_data}), 200
+
+
 
 
 
