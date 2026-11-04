@@ -53,29 +53,9 @@ def home():
 
 @app.route('israel-corners/translate-teams', methods=['POST'])
 def translate_teams():
-    try:
-        data = request.get_json()
-
-        if not isinstance(data, list):
-            return jsonify({"error": "Expected a list of dictionaries"}), 400
-
-        updated_data = []
-        for item in data:
-            new_item = item.copy()
-
-            if "team_a" in new_item and new_item["team_a"] in HEBREW_TO_ENGLISH_TEAMS:
-                new_item["team_a"] = HEBREW_TO_ENGLISH_TEAMS[new_item["team_a"]]
-
-            if "team_b" in new_item and new_item["team_b"] in HEBREW_TO_ENGLISH_TEAMS:
-                new_item["team_b"] = HEBREW_TO_ENGLISH_TEAMS[new_item["team_b"]]
-
-            updated_data.append(new_item)
-
-        return jsonify({"status": "success", "data": updated_data}), 200
-
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
+    data = request.get_json()
+    for item in data:
+        print (item)
 
 
 
