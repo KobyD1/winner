@@ -21,19 +21,6 @@ def get_headers():
 
 
 
-
-@app.route("/")
-def home():
-    return jsonify({
-        "status": "online",
-        "api": "Football Data API"
-    })
-
-
-from flask import Flask, request, jsonify
-
-app = Flask(__name__)
-
 HEBREW_TO_ENGLISH_TEAMS = {
     "מכבי תל אביב": "Maccabi Tel Aviv",
     "מכבי חיפה": "Maccabi Haifa",
@@ -51,6 +38,17 @@ HEBREW_TO_ENGLISH_TEAMS = {
     "עירוני טבריה": "Ironi Tiberias"
 
 }
+
+
+@app.route("/")
+def home():
+    return jsonify({
+        "status": "online",
+        "api": "Football Data API"
+    })
+
+
+
 
 
 @app.route('israel-corners/translate-teams', methods=['POST'])
