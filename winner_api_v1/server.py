@@ -559,6 +559,7 @@ def config():
         "ui_base_url": BASE_URL,
         "airtable_api_key": AIRTABLE_API_KEY,
         "airtable_base_id": AIRTABLE_BASE_ID,
+        "headless": True,
         "airtable_table_name": AIRTABLE_TABLE_NAME
     })
 
