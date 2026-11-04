@@ -81,7 +81,7 @@ def sort_results():
         }), 200
 
 
-@app.route('israel-corners/analyze', methods=['POST'])
+@app.route('/israel-corners/analyze', methods=['POST'])
 def analyze():
     data = request.get_json()
     table_data_converted=data.get("table_data_converted")
