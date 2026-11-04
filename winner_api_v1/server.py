@@ -59,14 +59,11 @@ def translate_teams():
 
     updated_data = []
     for item in data:
-        # יוצרים העתק של המילון כדי לא לדרוס את הנתונים המקוריים בזיכרון
         new_item = item.copy()
 
-        # בדיקה והחלפה בשדה team_a
         if "team_a" in new_item and new_item["team_a"] in HEBREW_TO_ENGLISH_TEAMS:
             new_item["team_a"] = HEBREW_TO_ENGLISH_TEAMS[new_item["team_a"]]
 
-        # בדיקה והחלפה בשדה team_b
         if "team_b" in new_item and new_item["team_b"] in HEBREW_TO_ENGLISH_TEAMS:
             new_item["team_b"] = HEBREW_TO_ENGLISH_TEAMS[new_item["team_b"]]
 
@@ -601,12 +598,15 @@ def sort_results():
 @app.route("/config")
 def config():
     BASE_URL = os.getenv("URL_WINNER")
+    CORNER_URL = os.getenv("URL_CORNER")
     AIRTABLE_API_KEY = os.getenv("AIR_TABLE_API_KEY")
     AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID")
     AIRTABLE_TABLE_NAME = os.getenv("AIRTABLE_TABLE_NAME")
 
+
     return jsonify({
         "ui_base_url": BASE_URL,
+        "ui_corner_url" : CORNER_URL,
         "airtable_api_key": AIRTABLE_API_KEY,
         "airtable_base_id": AIRTABLE_BASE_ID,
         "headless": True,
