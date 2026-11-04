@@ -84,7 +84,7 @@ def sort_and_analyze_results():
 @app.route('/israel-corners/analyze', methods=['POST'])
 def analyze_corners():
     data = request.get_json()
-    table_data_converted=data.get("table_data_converted")
+    table_data_converted=data.get("table_data")
     corner_data = data.get("corner_data")
     offset = data.get("offset", 2)
 
