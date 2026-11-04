@@ -79,6 +79,18 @@ def sort_and_analyze_results():
             "headers": headers,
             "rows": rows,
         }), 200
+@app.route('/sort_and_prapare_print', methods=['POST'])
+def sort_and_prapare_to_print():
+
+    results_not_sorted = request.get_json()
+    results_sorted = sorted(results_not_sorted, key=lambda x: x["score"], reverse=True)
+    for item in results_sorted:
+        result_list = [None] * len(results_sorted)
+
+        for item in results_sorted.values():
+            result_list[item["id"] - 1] = item["value"]
+
+        print(result_list)
 
 
 @app.route('/israel-corners/analyze', methods=['POST'])
@@ -87,6 +99,7 @@ def analyze_corners():
     table_data_converted=data.get("table_data")
     corner_data = data.get("corner_data")
     offset = data.get("offset", 2)
+    logger.info(f"Corner Offset value : {offset}  ")
 
     results_not_sorted = []
 
@@ -96,6 +109,7 @@ def analyze_corners():
 
         corner_a = float(corner_data.get(item["team_a"], 0))
         corner_b = float(corner_data.get(item["team_b"], 0))
+        logger.info(f"Corner teams values :corner_a {corner_a} ,corner_b {corner_b} ")
 
         total_corner = corner_a + corner_b
         favorite = 0
@@ -116,7 +130,7 @@ def analyze_corners():
             points += 15
 
         result_data = {}
-
+        logger.info(f"Corner game favorite found the value is   {favorite}  ")
         for i, (name, value) in enumerate({
                                               "Favorite": favorite,
                                               "Game": item.get("game"),
@@ -128,8 +142,6 @@ def analyze_corners():
                                               "team_a": item.get("team_a"),
                                               "team_b": item.get("team_b"),
 
-                                              "corner_b": corner_b,
-                                              "points": points,
                                           }.items(), start=1):
             result_data[name] = {
                 "id": i,
