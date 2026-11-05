@@ -162,7 +162,7 @@ def analyze_corners():
                 "id": i,
                 "value": value
             }
-        if (favorite != 0 ):results_not_sorted.append(result_data)
+        results_not_sorted.append(result_data)
 
     return jsonify(results_not_sorted)
 
