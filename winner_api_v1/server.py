@@ -119,7 +119,7 @@ def analyze_corners():
 
         corner_a = float(corner_data.get(item["team_a"], 0))
         corner_b = float(corner_data.get(item["team_b"], 0))
-        logger.info(f"Corner teams values :corner_a {corner_a} ,corner_b {corner_b} ")
+        logger.info(f"Corner teams values :corner_a ={corner_a} ,corner_b ={corner_b} ")
 
         total_corner = corner_a + corner_b
         favorite = 0
