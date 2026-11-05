@@ -81,6 +81,7 @@ def sort_and_analyze_results():
         }), 200
 @app.route('/sort_and_prapare_print', methods=['POST'])
 def sort_and_prapare_to_print():
+    logger.info(f"Into prapere to print  ")
 
     results_not_sorted = request.get_json()
     results_sorted = sorted(
@@ -144,23 +145,24 @@ def analyze_corners():
 
         result_data = {}
         logger.info(f"Corner game favorite found the value is   {favorite}  ")
-        for i, (name, value) in enumerate({
-                                              "Favorite": favorite,
-                                              "Game": item.get("game"),
-                                              "Points": points,
-                                              "Bet": item.get(f"bet{favorite}") if favorite != 0 else "",
-                                              "Rate": rate,
-                                              "Corner Home": corner_a,
-                                              "Corner Away": corner_b,
-                                              "Team Home": item.get("team_a"),
-                                              "Team Away": item.get("team_b"),
+        if favorite != 0 :
+            for i, (name, value) in enumerate({
+                                                  "Favorite": favorite,
+                                                  "Game": item.get("game"),
+                                                  "Points": points,
+                                                  "Bet": item.get(f"bet{favorite}") if favorite != 0 else "",
+                                                  "Rate": rate,
+                                                  "Corner Home": corner_a,
+                                                  "Corner Away": corner_b,
+                                                  "Team Home": item.get("team_a"),
+                                                  "Team Away": item.get("team_b"),
 
-                                          }.items(), start=1):
-            result_data[name] = {
-                "id": i,
-                "value": value
-            }
-        results_not_sorted.append(result_data)
+                                              }.items(), start=1):
+                result_data[name] = {
+                    "id": i,
+                    "value": value
+                }
+            results_not_sorted.append(result_data)
 
     return jsonify(results_not_sorted)
 
