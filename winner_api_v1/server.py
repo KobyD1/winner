@@ -129,12 +129,10 @@ def analyze_corners():
         if total_corner < (9 - offset):
             favorite = 1
             rate = "under 9-11"
-            points += int(item.get(f"bet{favorite}"))*5
 
         elif total_corner > (11 + offset):
             favorite = 2
             rate = "over 9-11"
-            points += int(item.get(f"bet{favorite}"))*5
 
         if total_corner > 14 or total_corner < 6:
             points += 25
