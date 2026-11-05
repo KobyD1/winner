@@ -129,11 +129,11 @@ def analyze_corners():
         if total_corner < (9 - offset):
             favorite = 1
             rate = "under 9-11"
-        elif total_corner > (10 + offset):
+        elif total_corner > (11 + offset):
             favorite = 2
             rate = "over 9-11"
 
-        if total_corner > 14 or total_corner < 5:
+        if total_corner > 14 or total_corner < 6:
             points += 25
 
         if abs(corner_a - corner_b) < 3:
@@ -148,9 +148,9 @@ def analyze_corners():
                                               "Bet": item.get(f"bet{favorite}") if favorite != 0 else "",
                                               "Rate": rate,
                                               "Corner Home": corner_a,
-                                              "Corner_Away": corner_b,
-                                              "team_a": item.get("team_a"),
-                                              "team_b": item.get("team_b"),
+                                              "Corner Away": corner_b,
+                                              "Team Home": item.get("team_a"),
+                                              "Team Away": item.get("team_b"),
 
                                           }.items(), start=1):
             result_data[name] = {
