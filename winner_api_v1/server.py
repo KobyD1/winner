@@ -81,7 +81,6 @@ def sort_and_analyze_results():
         }), 200
 @app.route('/sort_and_prapare_print', methods=['POST'])
 def sort_and_prapare_to_print():
-    logger.info(f"Into prapere to print  ")
 
     results_not_sorted = request.get_json()
     results_sorted = sorted(
@@ -145,7 +144,6 @@ def analyze_corners():
 
         result_data = {}
         logger.info(f"Corner game favorite found the value is   {favorite}  ")
-
         for i, (name, value) in enumerate({
                                               "Favorite": favorite,
                                               "Game": item.get("game"),
