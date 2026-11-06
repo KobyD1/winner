@@ -109,6 +109,7 @@ def analyze_corners():
     table_data_converted=data.get("table_data")
     corner_data = data.get("corner_data")
     offset = data.get("offset", 2)
+    if offset == "Auto" : offset = 2
     logger.info(f"Corner Offset value : {offset}  ")
 
     results_not_sorted = []
@@ -286,6 +287,8 @@ def calc_football_under_over_api_algo():
     team_a = data["team_a"]
     team_b = data["team_b"]
     desc = data["desc"]
+    offset = data.get("offset",0)
+    if offset == 'Auto' :offset = 0
 
     bonus = 0
     favorite = 0
@@ -317,7 +320,7 @@ def calc_football_under_over_api_algo():
     if desc == "2 Teams Under/Over 2-3 Range":
 
         match avg_total:
-            case x if x < 1.0:
+            case x if x < 0.9-offset:
                 favorite = 1
                 bonus += 20
                 home_count = team_a.get("count_0_1", 0)
@@ -328,7 +331,7 @@ def calc_football_under_over_api_algo():
                 home_count = team_a.get("count_2_3", 0)
                 away_count = team_b.get("count_2_3", 0)
 
-            case x if x > 3.1:
+            case x if x > 3.1+offset:
                 favorite = 2
                 high_bonus = (avg_total - 3) * 15
                 home_count = team_a.get("count_4_plus", 0)
@@ -606,6 +609,7 @@ def calc_under():
     team2 = req_data.get("team2")
     favorite = req_data.get("favorite")
     offset = req_data.get("offset",8)
+    if offset == "Auto" : offset = 8
 
     data = req_data.get("data", [])
 
