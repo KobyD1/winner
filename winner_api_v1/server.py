@@ -109,7 +109,7 @@ def analyze_corners():
     table_data_converted=data.get("table_data")
     corner_data = data.get("corner_data")
     offset = data.get("offset", 2)
-    if offset == "-1" : offset = 2
+    if offset == -1 : offset = 2
     logger.info(f"running with offset {offset}")
 
 
@@ -290,7 +290,7 @@ def calc_football_under_over_api_algo():
     team_b = data["team_b"]
     desc = data["desc"]
     offset = data.get("offset",0)
-    if offset == '-1' :offset = 0
+    if offset == -1 :offset = 0
     logger.info(f"running with offset {offset}")
     bonus = 0
     favorite = 0
@@ -611,7 +611,7 @@ def calc_under():
     team2 = req_data.get("team2")
     favorite = req_data.get("favorite")
     offset = req_data.get("offset",8)
-    if offset == "-1" : offset = 8
+    if offset == -1 : offset = 8
     logger.info(f"running with offset {offset}")
 
 
