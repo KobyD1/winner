@@ -241,33 +241,27 @@ def calc_football_banker_algo():
     points_diff = abs(points_diff)
 
     if position_diff_abs > 9:
-        logger.info(f"Teams found for Banker Algo by position: {position_diff_abs}")
+        logger.info(f"Teams found for Banker Algo by position diff: {position_diff_abs}")
 
 
         scores += position_diff_abs * 10
 
     if (position_diff_abs > 9) and (points_diff > 9):
 
-        logger.info(f"Teams found for Banker Algo by points: {points_diff}")
 
         scores += points_diff * 10
 
     # team_a better ranked
-    if (
-        position_diff < 0 and
-        position_diff_abs > 9
-    ):
+    if (position_diff > 0) and (position_diff_abs > 9):
+        logger.info(f"Teams found for Banker Algo by Home Team: {points_diff}")
 
         scores += 20
         favorite = 1
 
     # team_b better ranked
-    elif (
-        position_diff > 0 and
-        position_diff_abs > 9
-    ):
+    elif (position_diff < 0 ) and (position_diff_abs>9):
 
-        logger.info(f"Teams found for Banker Algo: {position_diff_abs}")
+        logger.info(f"Teams found for Banker Algo by Away Team: {points_diff}")
         favorite = 2
 
     print(
