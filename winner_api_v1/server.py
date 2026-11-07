@@ -150,7 +150,7 @@ def analyze_corners():
                                                   "Points": points,
                                                   "Bet": item.get(f"bet{favorite}") if favorite != 0 else "",
                                                   "Rate": rate,
-                                                  "Teams Corners": corner_a + corner_b,
+                                                  "Teams Corners": round(corner_a + corner_b,2),
                                                   "Team Home": f"{item.get("team_a")} ({corner_a})",
                                                   "Team Away": f"{item.get("team_b")} ({corner_b})",
 
