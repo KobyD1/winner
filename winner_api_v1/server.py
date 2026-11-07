@@ -256,13 +256,13 @@ def calc_football_banker_algo():
         logger.info(f"Teams found for Banker Algo by Home Team: {points_diff}")
 
         scores += 20
-        favorite = 1
+        favorite = 2
 
     # team_b better ranked
     elif (position_diff < 0 ) and (position_diff_abs>9):
 
         logger.info(f"Teams found for Banker Algo by Away Team: {points_diff}")
-        favorite = 2
+        favorite = 1
 
     print(
         f"{scores} scores found "
