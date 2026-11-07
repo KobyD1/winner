@@ -608,7 +608,6 @@ def calc_under():
     if offset == -1 : offset = 8
     logger.info(f"running with offset {offset}")
 
-
     data = req_data.get("data", [])
 
     row1 = next((item for item in data if item.get("TEAM_NAME") == team1), None)
@@ -635,11 +634,11 @@ def calc_under():
     score = 0
 
     if avg_pts - rate > offset:
-        favorite = 1
+        favorite = 2
         score = avg_pts - rate
 
     if rate - avg_pts > offset:
-        favorite = 2
+        favorite = 1
         score = rate - avg_pts
 
 
