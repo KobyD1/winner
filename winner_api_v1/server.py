@@ -9,14 +9,14 @@ import os
 
 app = Flask(__name__)
 
-API_KEY = os.getenv("FOOTBALL_API_KEY")
+FOOTBALL_API_KEY = os.getenv("FOOTBALL_API_KEY")
 
-BASE_URL = "https://api.football-data.org/v4"
+FOOTBALL_BASE_URL = "https://api.football-data.org/v4"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 def get_headers():
-    return {"X-Auth-Token": API_KEY}
+    return {"X-Auth-Token": FOOTBALL_API_KEY}
 
 
 
@@ -362,7 +362,7 @@ def calc_football_under_over_api_algo():
 
 @app.route("/<league_code>/teams")
 def get_teams(league_code):
-    url = f"{BASE_URL}/competitions/{league_code}/teams"
+    url = f"{FOOTBALL_BASE_URL}/competitions/{league_code}/teams"
 
     response = requests.get(url, headers=get_headers())
 
@@ -393,7 +393,7 @@ def get_teams(league_code):
 
 @app.route("/<league_code>/matches")
 def matches(league_code):
-    url = f"{BASE_URL}/competitions/{league_code}/matches"
+    url = f"{FOOTBALL_BASE_URL}/competitions/{league_code}/matches"
 
     response = requests.get(url, headers=get_headers())
 
@@ -432,7 +432,7 @@ def matches(league_code):
 
 @app.route("/<league_code>/results")
 def results(league_code):
-    url = f"{BASE_URL}/competitions/{league_code}/matches"
+    url = f"{FOOTBALL_BASE_URL}/competitions/{league_code}/matches"
 
     response = requests.get(url, headers=get_headers())
 
@@ -474,7 +474,7 @@ def results(league_code):
 
 @app.route("/<league_code>/standings")
 def standings(league_code):
-    url = f"{BASE_URL}/competitions/{league_code}/standings"
+    url = f"{FOOTBALL_BASE_URL}/competitions/{league_code}/standings"
 
     response = requests.get(url, headers=get_headers())
 
@@ -510,8 +510,8 @@ def standings(league_code):
 
 @app.route("/<league_code>/all-stats")
 def all_stats(league_code):
-    standings_url = (f"{BASE_URL}/competitions/{league_code}/standings")
-    matches_url = (f"{BASE_URL}/competitions/{league_code}/matches")
+    standings_url = (f"{FOOTBALL_BASE_URL}/competitions/{league_code}/standings")
+    matches_url = (f"{FOOTBALL_BASE_URL}/competitions/{league_code}/matches")
 
     standings_response = requests.get(standings_url,headers=get_headers())
     matches_response = requests.get(matches_url,headers=get_headers())
@@ -710,7 +710,7 @@ def sort_results():
 
 @app.route("/config")
 def config():
-    BASE_URL = os.getenv("URL_WINNER")
+    UI_BASE_URL = os.getenv("URL_WINNER")
     CORNER_URL = os.getenv("URL_CORNER")
     AIRTABLE_API_KEY = os.getenv("AIR_TABLE_API_KEY")
     AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID")
@@ -718,7 +718,7 @@ def config():
 
 
     return jsonify({
-        "ui_base_url": BASE_URL,
+        "ui_base_url": UI_BASE_URL,
         "ui_corner_url" : CORNER_URL,
         "airtable_api_key": AIRTABLE_API_KEY,
         "airtable_base_id": AIRTABLE_BASE_ID,
