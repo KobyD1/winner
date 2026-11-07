@@ -5,12 +5,15 @@
     "all_wnba_v1.bat": "נשים NBA",
     "football_under_over_api.py": "כדורגל אירופה - מעל/מתחת",
     "football_bancker_api.py": "כדורגל אירופה - בנקר",
-    "basketball_under.py": "כדורסל - מעל/מתחת"
+    "corners_under_over_api.py": "קרנות - מעל/מתחת",
+    "nba_under_over_api.py": "כדורסל - מעל/מתחת"
   },
   "visible": {
     "all_wnba_v1.bat": false,
     "basketball_under.py": false,
     "req_winner.txt": false,
+    "requirements.txt": false,
+    "server.py": false,
     "all_no_filter_koby2.bat": false,
     "all_no_filter.bat": false,
     "all_no_filter_v1.bat": false,
@@ -37,7 +40,21 @@
     "Spain",
     "England-PLeague",
     "Italy-Serie A",
-    "NBA"
+    "NBA",
+    "All"
   ],
-  "last_league": "Italy-Serie A"
+  "last_league": "Spain",
+  "offset_var": "OFFSET",
+  "offset_options": [
+    "2",
+    "3",
+    "5",
+    "8",
+    "0",
+    "Auto",
+    "1",
+    "4",
+    "-1"
+  ],
+  "last_offset": "0"
 }

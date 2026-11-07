@@ -5,21 +5,73 @@ class RenderApi:
 
     def __init__(self):
         self.render_url = "https://pythonprojectnew-ps0h.onrender.com"
+        print ("send wake up ")
+        try:
+            requests.get(self.render_url, timeout=0.001)
+        except requests.exceptions.Timeout:
+            pass
+        print ("after  wake up ")
+
+    def get_israel_league_data(self,data):
+        response = requests.post(f"{self.render_url}/israel-corners/translate-teams",json=data)
+        new_data = response.json()
+        return new_data
+
+    def sort_and_prapre_to_print(self,data_not_sorted):
+        response = requests.post(
+            f"{self.render_url}/sort_and_prapare_print",
+            json=data_not_sorted,
+        )
+        if response.status_code == 200:
+            return response.json()
+
+        else:
+
+            print(f"Sorting data failed ({response.status_code})")
+            print(f"לא נמצאו משחקים לאחר ניתוח תוצאות")
+
+        return None
+
+
+
+    def analyze_israel_corner_data(self,table_data, corner_data,offset):
+        payload = {
+            "table_data": table_data,
+            "corner_data": corner_data,
+            "offset": offset
+        }
+        response = requests.post(
+            f"{self.render_url}/israel-corners/analyze",
+            json=payload,
+        )
+        if response.status_code != 200:
+            raise RuntimeError(
+                f"Corners analysis failed with status "
+                f"{response.status_code}: {response.text}"
+            )
+            return None
+        return response.json()
+
 
     def get_league_code(self, league_name):
         response = requests.get(f"{self.render_url}/league-code/{league_name}")
         return response.json().get("league_code", None)
 
 
-    def calc_football_under(self,team_a,team_b,desc="2 Teams Under/Over 2-3 Range"):
+    def calc_football_under(self,team_a,team_b,offset = 0 ,desc="2 Teams Under/Over 2-3 Range"):
 
         payload = {
             "team_a": team_a,
             "team_b": team_b,
+            "offset": offset,
             "desc": desc
         }
 
         response = requests.post(f"{self.render_url}/football-under",json=payload)
+        if response.status_code != 200:
+            print (f"calc_football_under analysis failed with status {response.status_code}: {response.text}")
+
+            return None
 
         return response.json()
 
@@ -125,27 +177,35 @@ class RenderApi:
         print(f"Team data for {team_name}: {team_data}")
         return team_data
 
-    def get_nba_teams_data(self,teams_code,table_data,excel_data,season):
+    def analyze_nba_teams_data(self, teams_code, table_data, excel_data, season,offset = 8 ):
 
         payload ={
             "team1": excel_data["team_a"],
             "team2": excel_data["team_b"],
             "season": season,
+            "offset" : offset,
             "table_data": table_data,
+            "favorite": 0,
+
             "data": teams_code
         }
 
         response = requests.post(f"{self.render_url}/nba/calc-under", json=payload)
         data = response.json()
+        if response.status_code != 200:
+            print ( f"  ** NBA team data  request failed with status {response.status_code}: {response.text}")
 
         return data
 
-    def analayze_nba_data(self,results_not_sorted):
-        payload = {
-            "results_not_sorted": results_not_sorted
-        }
+    def filter_nba_data(self,results_not_sorted):
+        payload = {"results_not_sorted": results_not_sorted }
 
         response = requests.post(f"{self.render_url}/nba/analyze", json=payload)
+        print(f"NBA analysis response code: {response.status_code}")
+        if response.status_code != 200:
+            print(f" ** NBA analyzer  data  request failed with status {response.status_code}: {response.text}")
+
+
         data = response.json()
 
         return data

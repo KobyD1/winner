@@ -3,7 +3,7 @@ import time
 from asyncio.windows_events import NULL
 
 
-class main_page:
+class MainPage:
 
     def __init__(self,page):
         self.page = page
@@ -43,6 +43,9 @@ class main_page:
 
             case "Italy-Serie A":
                  loc = self.page.get_by_role("checkbox", name="איטליה - סרייה א").all()[0]
+
+            case "IsraelCorner":
+                 loc = self.page.locator("[id='lg_1|ישראל - ליגת Winner']").all()[0]
 
             case _:
                 print("league not found")
@@ -97,6 +100,7 @@ class main_page:
 
         actual_index = 1
         for row in rows:
+            row_text = row.inner_text().strip()
 
             if not row.is_visible():
                 continue
@@ -112,6 +116,11 @@ class main_page:
                     continue
 
                 case _ if any(term in teams for term in ["שערים", "טווחים"]):
+                    team_a, team_b, rate, description, team_with_added_points = self.teams_data_parser_uder_over(teams)
+                    row_data = self.row_data_parser(row, team_a, team_b, rate, description, team_with_added_points)
+                    row_data, bet_empty_counter = self.bet_parser(row, row_data)
+
+                case _ if any(term in teams for term in ["סך הכל קרנות (9-11)"]):
                     team_a, team_b, rate, description, team_with_added_points = self.teams_data_parser_uder_over(teams)
                     row_data = self.row_data_parser(row, team_a, team_b, rate, description, team_with_added_points)
                     row_data, bet_empty_counter = self.bet_parser(row, row_data)
@@ -193,21 +202,16 @@ class main_page:
             if  ":"  in row_data["status_time"] and len(row_data)>0 and bet_empty_counter <1:
                 print(f"---- משחק פעיל נמצא בתכניה ----")
                 if "bet3" in row_data:
-                    print(
-                        f" יחסי הימורים ל: תיקו- {row_data['bet2']}, "
-                        f"2 - {row_data['bet3']}, "
-                        f"gov_1 - {row_data['bet1']}"
-                    )
+                    print(f"יחסי הימורים: 2- {row_data['bet2']} , 1- {row_data['bet1']},x-- {row_data['bet3']}")
 
 
                 else:
-                    print(f"יחסי הימורים: 2- {row_data['bet2']} , gov_1- {row_data['bet1']}")
+                    print(f"יחסי הימורים: 2- {row_data['bet2']} , 1- {row_data['bet1']}")
 
 
-                print(f" שעת משחק: {row_data["status_time"]}")
                 print(f"  משחק: {teams}")
 
-                print(f"  פרטי משחק (תכניה-משחק): {row_data["program"]} - {row_data["game_in_program"]}")
+                print(f"   משחק (תכניה-משחק): {row_data["program"]} - {row_data["game_in_program"]}")
                 row_data["team_with_added_points"] = team_with_added_points
                 table_content.append(row_data)
             actual_index += 1
@@ -245,7 +249,7 @@ class main_page:
                 parts = teams.split(")")
                 player = parts[1].strip()
                 rate = re.findall(r"\d+", parts[0])
-                description = 'gov_1 Player Under/Over'
+                description = 'Player Under/Over'
                 return player, NULL, rate, description, NULL
 
 
@@ -262,6 +266,17 @@ class main_page:
 
                 return team_a, team_b, rate, description, team_with_added_points
 
+            case _ if("קרנות" in teams) and ( "סך" in teams):
+                teams = teams[teams.index(")")+1:]
+                parts = teams.split("-")
+                team_b = parts[1].strip()
+                team_a = parts[0].strip()
+
+                rate = None
+                description = 'Corners 2 Teams'
+                team_with_added_points = None
+
+                return team_a, team_b, rate, description, team_with_added_points
 
             case _ if "טווחים" in teams:
                 teams = teams[teams.index(")")+1:]

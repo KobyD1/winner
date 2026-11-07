@@ -32,6 +32,7 @@ class nbaApi:
             "GP",
             "PTS",
             "FG3M",
+            "PLUS_MINUS",
         ]
 
         filtered_df = df[columns]

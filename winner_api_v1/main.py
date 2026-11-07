@@ -23,6 +23,8 @@ manager_app.py - אפליקציית ניהול להרצת הסקריפטים ב�
   "interpreter"    - מפרש Python אחר להרצת הסקריפטים (ברירת מחדל: המפרש שמריץ את המנג'ר)
   "days_var"       - שם המשתנה שנכתב ב-globals.py (ברירת מחדל: "DAYS")
   "days_options"   - רשימת הערכים בתיבת "ימים" (ברירת מחדל: 1,2,3,5,7,10,14,21,30)
+  "offset_var"     - שם המשתנה שנכתב ב-globals.py (ברירת מחדל: "OFFSET")
+  "offset_options" - רשימת הערכים בתיבת "היסט" (ברירת מחדל: -2,-1,0,1,2,3,5)
   "error_marker"   - regex שקובע מתי נפתח באנר השגיאה (ברירת מחדל: המילה המדויקת ERROR,
                      רגישה לאותיות רישיות - Traceback/Exception רגיל לא מפעילים אותו)
 """
@@ -69,6 +71,8 @@ DEFAULT_DAYS_VAR = "DAYS"                              # שם המשתנה שנ�
 DEFAULT_DAYS_OPTIONS = ["0","1", "2", "3",]
 DEFAULT_LEAGUE_VAR = "LEAGUE"
 DEFAULT_LEAGUE_OPTIONS = ["Spain", "England-PLeague", "NBA"]
+DEFAULT_OFFSET_VAR = "OFFSET"
+DEFAULT_OFFSET_OPTIONS = [ "0", "1", "2", "3", "5"]
 
 ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 ERR_RE = re.compile(r"\b(error|exception|critical|fatal|failed)\b", re.I)
@@ -367,6 +371,7 @@ class ManagerApp(tk.Tk):
         self.mode_var = tk.StringVar(value="auto")
         self.days_value = tk.StringVar()
         self.league_value = tk.StringVar()
+        self.offset_value = tk.StringVar()
         self.autoscroll = tk.BooleanVar(value=True)
         self.wrap = tk.BooleanVar(value=False)
         self.clear_on_run = tk.BooleanVar(value=True)
@@ -411,14 +416,23 @@ class ManagerApp(tk.Tk):
                           or str(self.cfg.get("last_league", "")) or self.league_options[0])
         if initial_league not in self.league_options:
             self.league_options.append(initial_league)
+        self.offset_var_name = str(self.cfg.get("offset_var") or DEFAULT_OFFSET_VAR)
+        self.offset_options = list(self.cfg.get("offset_options") or DEFAULT_OFFSET_OPTIONS)
+        initial_offset = (read_global_value(self.offset_var_name)
+                          or str(self.cfg.get("last_offset", "")) or self.offset_options[0])
+        if initial_offset not in self.offset_options:
+            self.offset_options.append(initial_offset)
 
         self.days_value.set(initial_days)
         self.league_value.set(initial_league)
+        self.offset_value.set(initial_offset)
         self.hide_summary.set(bool(self.cfg.get("hide_summary", False)))
 
         if hasattr(self, "days_cb"):            # הווידג'טים כבר קיימים - עדכן אותם במקום
             self.days_cb.config(values=self.days_options)
             self.days_lbl.config(text=f"ימים ({self.days_var_name}):")
+            self.offset_cb.config(values=self.offset_options)
+            self.offset_lbl.config(text=f"היסט ({self.offset_var_name}):")
             self.league_cb.config(values=self.league_options)
             self.league_lbl.config(text=f"ליגה ({self.league_var_name}):")
             self.folder_lbl.config(text=f"📁 {BASE_DIR.name}")
@@ -540,8 +554,19 @@ class ManagerApp(tk.Tk):
         self.league_note = ttk.Label(opts, foreground="#188038")
         self.league_note.grid(row=4, column=0, columnspan=2, sticky="w")
 
+        self.offset_lbl = ttk.Label(opts, text=f"היסט(1-:מצב אוטומטי)  ({self.offset_var_name}):")
+        self.offset_lbl.grid(row=5, column=0, sticky="w", pady=(6, 0))
+        self.offset_cb = ttk.Combobox(opts, values=self.offset_options,
+                                      textvariable=self.offset_value, width=12)
+        self.offset_cb.grid(row=5, column=1, sticky="w", padx=(6, 0), pady=(6, 0))
+        self.offset_cb.bind("<<ComboboxSelected>>", self.on_offset_change)
+        self.offset_cb.bind("<Return>", self.on_offset_change)
+        self.offset_cb.bind("<FocusOut>", self.on_offset_change)
+        self.offset_note = ttk.Label(opts, foreground="#188038")
+        self.offset_note.grid(row=6, column=0, columnspan=2, sticky="w")
+
         btns = ttk.Frame(opts)
-        btns.grid(row=5, column=0, columnspan=2, sticky="ew", pady=(10, 0))
+        btns.grid(row=7, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         for key, text, cmd in (("run", "▶ הרץ", self.run_selected),
                                ("stop", "■ עצור", self.stop_selected),
                                ("restart", "↻ הפעל מחדש", self.restart_selected)):
@@ -715,6 +740,9 @@ class ManagerApp(tk.Tk):
         self.cfg["league_var"] = self.league_var_name
         self.cfg["league_options"] = self.league_options
         self.cfg["last_league"] = self.league_value.get().strip()
+        self.cfg["offset_var"] = self.offset_var_name
+        self.cfg["offset_options"] = self.offset_options
+        self.cfg["last_offset"] = self.offset_value.get().strip()
         try:
             CONFIG_FILE.write_text(json.dumps(self.cfg, ensure_ascii=False, indent=2),
                                    encoding="utf-8")
@@ -876,6 +904,29 @@ class ManagerApp(tk.Tk):
             return
         self.league_note.config(
             text=f"✔ נכתב ל-globals.py: {self.league_var_name} = {value!r}",
+            foreground="#188038")
+        self._save_config()
+
+    def on_offset_change(self, _event=None) -> None:
+        """נקרא כשבוחרים/מקלידים ערך בתיבת 'היסט' - כותב אותו מיד ל-globals.py כמספר שלם."""
+        value = self.offset_value.get().strip()
+        if not value:
+            return
+        try:
+            int(value)
+        except ValueError:
+            self.offset_note.config(text=f"⚠ '{value}' אינו מספר שלם", foreground="#c5221f")
+            return
+        try:
+            write_global_literal(self.offset_var_name, value)
+        except OSError as e:
+            self.offset_note.config(text=f"✖ שגיאת כתיבה: {e}", foreground="#c5221f")
+            return
+        if value not in self.offset_options:
+            self.offset_options.append(value)
+            self.offset_cb.config(values=self.offset_options)
+        self.offset_note.config(
+            text=f"✔ נכתב ל-globals.py: {self.offset_var_name} = {value}",
             foreground="#188038")
         self._save_config()
 
