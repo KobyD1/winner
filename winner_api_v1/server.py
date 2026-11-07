@@ -109,8 +109,9 @@ def analyze_corners():
     table_data_converted=data.get("table_data")
     corner_data = data.get("corner_data")
     offset = data.get("offset", 2)
-    if offset == "Auto" : offset = 2
-    logger.info(f"Corner Offset value : {offset}  ")
+    if offset == "-1" : offset = 2
+    logger.info(f"running with offset {offset}")
+
 
     results_not_sorted = []
 
@@ -283,13 +284,14 @@ def calc_football_banker_algo():
 @app.route("/football-under", methods=["POST"])
 def calc_football_under_over_api_algo():
     data = request.get_json()
+    logger.info(f"into /football-under ")
 
     team_a = data["team_a"]
     team_b = data["team_b"]
     desc = data["desc"]
     offset = data.get("offset",0)
-    if offset == 'Auto' :offset = 0
-
+    if offset == '-1' :offset = 0
+    logger.info(f"running with offset {offset}")
     bonus = 0
     favorite = 0
 
@@ -609,7 +611,9 @@ def calc_under():
     team2 = req_data.get("team2")
     favorite = req_data.get("favorite")
     offset = req_data.get("offset",8)
-    if offset == "Auto" : offset = 8
+    if offset == "-1" : offset = 8
+    logger.info(f"running with offset {offset}")
+
 
     data = req_data.get("data", [])
 
